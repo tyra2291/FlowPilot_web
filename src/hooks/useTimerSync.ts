@@ -19,9 +19,10 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
 
   const push = useCallback(async (state: RemoteTimerState) => {
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) return
+    if (!session?.user) { console.warn("[TimerSync] push: no session"); return }
     const user = session.user
-    supabase.from("timer_state").upsert({
+    console.log("[TimerSync] pushing state:", state.is_running, "seconds:", state.seconds_remaining)
+    const { error } = await supabase.from("timer_state").upsert({
       user_id: user.id,
       device_id: DEVICE_ID,
       is_running: state.is_running,
@@ -32,6 +33,7 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
       title: state.title,
       updated_at: new Date().toISOString(),
     })
+    if (error) console.error("[TimerSync] upsert error:", error)
   }, [])
 
   useEffect(() => {
@@ -48,6 +50,7 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
           table: "timer_state",
           filter: `user_id=eq.${user.id}`,
         }, (payload: any) => {
+          console.log("[TimerSync] received event, device_id match:", payload.new?.device_id === DEVICE_ID)
           const row = payload.new
           if (!row || row.device_id === DEVICE_ID) return
           cbRef.current({
@@ -59,7 +62,9 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
             title: row.title,
           })
         })
-        .subscribe()
+        .subscribe((status, err) => {
+          console.log("[TimerSync] subscription status:", status, err ?? "")
+        })
     })
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [])
