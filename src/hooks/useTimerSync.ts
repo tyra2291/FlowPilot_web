@@ -10,30 +10,20 @@ export interface RemoteTimerState {
   title: string | null
 }
 
-// Stable per-tab ID so we can filter out our own Realtime echoes.
 const DEVICE_ID = crypto.randomUUID()
 
 export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
   const cbRef = useRef(onRemoteUpdate)
   cbRef.current = onRemoteUpdate
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
-  const push = useCallback(async (state: RemoteTimerState) => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) { console.warn("[TimerSync] push: no session"); return }
-    const user = session.user
-    console.log("[TimerSync] pushing state:", state.is_running, "seconds:", state.seconds_remaining)
-    const { error } = await supabase.from("timer_state").upsert({
-      user_id: user.id,
-      device_id: DEVICE_ID,
-      is_running: state.is_running,
-      end_time_ms: state.end_time_ms,
-      seconds_remaining: state.seconds_remaining,
-      category_name: state.category_name,
-      category_color: state.category_color,
-      title: state.title,
-      updated_at: new Date().toISOString(),
+  // Broadcast is fire-and-forget — no DB write, no latency.
+  const push = useCallback((state: RemoteTimerState) => {
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "timer_update",
+      payload: { ...state, device_id: DEVICE_ID },
     })
-    if (error) console.error("[TimerSync] upsert error:", error)
   }, [])
 
   useEffect(() => {
@@ -41,32 +31,26 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const user = session?.user
       if (!user) return
-      const channelId = crypto.randomUUID()
       channel = supabase
-        .channel(`timer:${user.id}:${channelId}`)
-        .on("postgres_changes" as any, {
-          event: "*",
-          schema: "public",
-          table: "timer_state",
-          filter: `user_id=eq.${user.id}`,
-        }, (payload: any) => {
-          console.log("[TimerSync] received event, device_id match:", payload.new?.device_id === DEVICE_ID)
-          const row = payload.new
-          if (!row || row.device_id === DEVICE_ID) return
+        .channel(`timer:${user.id}`)
+        .on("broadcast", { event: "timer_update" }, ({ payload }: any) => {
+          if (!payload || payload.device_id === DEVICE_ID) return
           cbRef.current({
-            is_running: row.is_running,
-            end_time_ms: row.end_time_ms,
-            seconds_remaining: row.seconds_remaining,
-            category_name: row.category_name,
-            category_color: row.category_color,
-            title: row.title,
+            is_running: payload.is_running,
+            end_time_ms: payload.end_time_ms,
+            seconds_remaining: payload.seconds_remaining,
+            category_name: payload.category_name,
+            category_color: payload.category_color,
+            title: payload.title,
           })
         })
-        .subscribe((status, err) => {
-          console.log("[TimerSync] subscription status:", status, err ?? "")
-        })
+        .subscribe()
+      channelRef.current = channel
     })
-    return () => { if (channel) supabase.removeChannel(channel) }
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+      channelRef.current = null
+    }
   }, [])
 
   return { push }
