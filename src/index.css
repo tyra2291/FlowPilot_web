@@ -1,0 +1,31 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Desktop: show sidebar, hide burger */
+.desktop-nav { display: flex !important; }
+.mobile-burger { display: none !important; }
+
+/* Mobile: hide sidebar, show burger */
+@media (max-width: 640px) {
+  .desktop-nav { display: none !important; }
+  .mobile-burger { display: flex !important; }
+}
+
+/* Native-feel inputs */
+input, button, select, textarea {
+  font-family: inherit;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }

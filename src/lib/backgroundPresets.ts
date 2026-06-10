@@ -1,0 +1,86 @@
+export interface MeshLayer {
+  colors: [string, string]
+  start: { x: number; y: number }
+  end:   { x: number; y: number }
+}
+
+export interface MeshPreset {
+  key: MeshKey
+  base: string
+  layers: MeshLayer[]
+}
+
+export type MeshKey =
+  | "meshVoid"
+  | "meshAurora"
+  | "meshNebula"
+  | "meshCosmos"
+  | "meshDusk"
+  | "meshCrimson"
+  | "meshBloom"
+  | "meshPolar"
+
+export const MESH_PRESETS: MeshPreset[] = [
+  {
+    key: "meshVoid",
+    base: "#07070D",
+    layers: [
+      { colors: ["rgba(108,99,255,0.5)", "transparent"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
+    ],
+  },
+  {
+    key: "meshAurora",
+    base: "#04040F",
+    layers: [
+      { colors: ["rgba(0,180,255,0.35)", "transparent"], start: { x: 1, y: 0 }, end: { x: 0, y: 1 } },
+      { colors: ["rgba(80,50,220,0.35)", "transparent"], start: { x: 0, y: 0 }, end: { x: 1, y: 0.7 } },
+    ],
+  },
+  {
+    key: "meshNebula",
+    base: "#080510",
+    layers: [
+      { colors: ["rgba(170,50,255,0.4)", "transparent"],  start: { x: 0.5, y: 0 }, end: { x: 0.5, y: 1 } },
+      { colors: ["rgba(255,50,120,0.25)", "transparent"], start: { x: 1,   y: 1 }, end: { x: 0,   y: 0 } },
+    ],
+  },
+  {
+    key: "meshCosmos",
+    base: "#04040A",
+    layers: [
+      { colors: ["rgba(50,100,255,0.4)", "transparent"],   start: { x: 0.5, y: 0 },   end: { x: 0.5, y: 0.9 } },
+      { colors: ["transparent", "rgba(200,140,50,0.18)"],  start: { x: 0,   y: 0.5 }, end: { x: 1,   y: 1   } },
+    ],
+  },
+  {
+    key: "meshDusk",
+    base: "#030A05",
+    layers: [
+      { colors: ["rgba(40,200,90,0.35)",  "transparent"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
+      { colors: ["rgba(0,160,160,0.25)",  "transparent"], start: { x: 1, y: 1 }, end: { x: 0, y: 0.5 } },
+    ],
+  },
+  {
+    key: "meshCrimson",
+    base: "#0A0303",
+    layers: [
+      { colors: ["rgba(210,40,40,0.45)", "transparent"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
+    ],
+  },
+  {
+    key: "meshBloom",
+    base: "#F5EEF0",
+    layers: [
+      { colors: ["rgba(255,140,180,0.45)", "transparent"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
+      { colors: ["rgba(200,90,140,0.25)",  "transparent"], start: { x: 1, y: 0 }, end: { x: 0, y: 1 } },
+    ],
+  },
+  {
+    key: "meshPolar",
+    base: "#EEF2F8",
+    layers: [
+      { colors: ["rgba(80,170,255,0.45)",  "transparent"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
+      { colors: ["rgba(40,210,210,0.25)",  "transparent"], start: { x: 1, y: 0 }, end: { x: 0, y: 1 } },
+    ],
+  },
+]
