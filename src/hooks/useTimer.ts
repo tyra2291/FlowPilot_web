@@ -86,5 +86,5 @@ export function useTimer(initialDuration: number) {
   const progress = chosenDuration > 0 ? 1 - seconds / chosenDuration : 0
   const elapsed  = chosenDuration - seconds
 
-  return { seconds, chosenDuration, isRunning, progress, selectDuration, reset, toggle, elapsed, addTime, jumpTo }
+  return { seconds, chosenDuration, isRunning, progress, selectDuration, reset, toggle, elapsed, addTime, jumpTo, setRunning: setIsRunning }
 }

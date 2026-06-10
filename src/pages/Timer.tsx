@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTimer } from "../hooks/useTimer"
 import { useCategories, Category } from "../hooks/useCategories"
@@ -10,6 +10,7 @@ import { useTheme } from "../hooks/useTheme"
 import { useTranslation } from "../lib/i18n"
 import Background from "../components/Background"
 import CircularTimer from "../components/CircularTimer"
+import { useTimerSync, RemoteTimerState } from "../hooks/useTimerSync"
 
 const fmtDuration = (s: number) => {
   const h = Math.floor(s / 3600)
@@ -26,7 +27,7 @@ export default function Timer() {
   const { settings, th } = useTheme()
   const navigate = useNavigate()
 
-  const { seconds, chosenDuration, isRunning, progress, selectDuration, reset, toggle, addTime, jumpTo } = useTimer(25 * 60)
+  const { seconds, chosenDuration, isRunning, progress, selectDuration, reset, toggle, addTime, jumpTo, setRunning } = useTimer(25 * 60)
   const { categories } = useCategories()
   const { quickTimers } = useQuickTimers()
   const { addSession, pruneOldSessions } = useSessions()
@@ -51,6 +52,38 @@ export default function Timer() {
   isRunningRef.current = isRunning
   currentBlockRef.current = currentBlock
   nextBlockRef.current = nextBlock
+
+  // ── Realtime sync ────────────────────────────────────────────────────────
+  const handleRemoteUpdate = useCallback((state: RemoteTimerState) => {
+    const cat = categories.find((c) => c.name === state.category_name)
+    if (cat) setActiveCategory(cat)
+    setSessionTitle(state.title || "")
+    if (state.is_running && state.end_time_ms) {
+      const rem = Math.max(1, Math.round((state.end_time_ms - Date.now()) / 1000))
+      jumpTo(rem)
+      if (!isRunningRef.current) setRunning(true)
+    } else {
+      jumpTo(state.seconds_remaining)
+      if (isRunningRef.current) setRunning(false)
+    }
+  }, [categories, jumpTo, setRunning])
+
+  const { push: syncPush } = useTimerSync(handleRemoteUpdate)
+
+  // Auto-push when timer starts or pauses — skips the first mount.
+  const syncMountedRef = useRef(false)
+  useEffect(() => {
+    if (!syncMountedRef.current) { syncMountedRef.current = true; return }
+    if (!activeCategory) return
+    syncPush({
+      is_running: isRunning,
+      end_time_ms: isRunning ? Date.now() + seconds * 1000 : null,
+      seconds_remaining: seconds,
+      category_name: activeCategory.name,
+      category_color: activeCategory.color,
+      title: sessionTitle || null,
+    })
+  }, [isRunning])
 
   useEffect(() => {
     if (!subLoading && !isPremium) pruneOldSessions()

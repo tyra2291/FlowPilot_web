@@ -1,0 +1,66 @@
+import { useEffect, useRef, useCallback } from "react"
+import { supabase } from "../lib/supabase"
+
+export interface RemoteTimerState {
+  is_running: boolean
+  end_time_ms: number | null
+  seconds_remaining: number
+  category_name: string
+  category_color: string
+  title: string | null
+}
+
+// Stable per-tab ID so we can filter out our own Realtime echoes.
+const DEVICE_ID = crypto.randomUUID()
+
+export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
+  const cbRef = useRef(onRemoteUpdate)
+  cbRef.current = onRemoteUpdate
+
+  const push = useCallback(async (state: RemoteTimerState) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    supabase.from("timer_state").upsert({
+      user_id: user.id,
+      device_id: DEVICE_ID,
+      is_running: state.is_running,
+      end_time_ms: state.end_time_ms,
+      seconds_remaining: state.seconds_remaining,
+      category_name: state.category_name,
+      category_color: state.category_color,
+      title: state.title,
+      updated_at: new Date().toISOString(),
+    })
+  }, [])
+
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      const channelId = crypto.randomUUID()
+      channel = supabase
+        .channel(`timer:${user.id}:${channelId}`)
+        .on("postgres_changes" as any, {
+          event: "*",
+          schema: "public",
+          table: "timer_state",
+          filter: `user_id=eq.${user.id}`,
+        }, (payload: any) => {
+          const row = payload.new
+          if (!row || row.device_id === DEVICE_ID) return
+          cbRef.current({
+            is_running: row.is_running,
+            end_time_ms: row.end_time_ms,
+            seconds_remaining: row.seconds_remaining,
+            category_name: row.category_name,
+            category_color: row.category_color,
+            title: row.title,
+          })
+        })
+        .subscribe()
+    })
+    return () => { if (channel) supabase.removeChannel(channel) }
+  }, [])
+
+  return { push }
+}
