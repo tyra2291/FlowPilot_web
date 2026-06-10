@@ -18,8 +18,9 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
   cbRef.current = onRemoteUpdate
 
   const push = useCallback(async (state: RemoteTimerState) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return
+    const user = session.user
     supabase.from("timer_state").upsert({
       user_id: user.id,
       device_id: DEVICE_ID,
@@ -35,7 +36,8 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user
       if (!user) return
       const channelId = crypto.randomUUID()
       channel = supabase
