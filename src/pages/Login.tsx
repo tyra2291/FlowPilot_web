@@ -102,6 +102,17 @@ export default function Login() {
         >
           {mode === "signin" ? t.noAccount : t.alreadyHaveAccount}
         </button>
+
+        <div style={{ marginTop: 32, textAlign: "center" }}>
+          <a
+            href="https://tyra2291.github.io/FlowPilot_landing_page/privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: th.muted, fontSize: 12, textDecoration: "none" }}
+          >
+            {t.privacyPolicy}
+          </a>
+        </div>
       </div>
     </Background>
   )
