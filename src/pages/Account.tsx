@@ -83,14 +83,18 @@ export default function Account() {
 
         <p style={{ color: th.sub, fontSize: 14, marginBottom: 24 }}>{email}</p>
 
-        {/* Display name */}
-        <div style={sectionTitle}>{t.accountInfo}</div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <input value={displayName} onChange={(e) => { setDisplayName(e.target.value); setNameSaved(false) }} placeholder={t.displayName} style={{ ...input, flex: 1 }} />
-          <button onClick={handleSaveName} style={{ background: th.text, border: "none", borderRadius: 100, padding: "12px 20px", color: th.inv, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}>
-            {nameSaved ? t.nameSaved : t.saveChanges}
-          </button>
-        </div>
+        {/* Display name — only for non-Google accounts */}
+        {!isGoogle && (
+          <>
+            <div style={sectionTitle}>{t.accountInfo}</div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <input value={displayName} onChange={(e) => { setDisplayName(e.target.value); setNameSaved(false) }} placeholder={t.displayName} style={{ ...input, flex: 1 }} />
+              <button onClick={handleSaveName} style={{ background: th.text, border: "none", borderRadius: 100, padding: "12px 20px", color: th.inv, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}>
+                {nameSaved ? t.nameSaved : t.saveChanges}
+              </button>
+            </div>
+          </>
+        )}
 
         {/* Password */}
         <div style={sectionTitle}>{t.security}</div>
