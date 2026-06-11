@@ -43,12 +43,15 @@ export default function Timer() {
   const [nextBlock, setNextBlock] = useState<ScheduleBlock | null>(null)
   const [interruptionActive, setInterruptionActive] = useState(false)
   const [interruptionElapsed, setInterruptionElapsed] = useState(0)
+  const [confirmQuick, setConfirmQuick] = useState<{ durationSec: number; label: string } | null>(null)
   const savedSecondsRef = useRef(0)
   const wasRunningRef = useRef(false)
   const isRunningRef = useRef(isRunning)
   const currentBlockRef = useRef<ScheduleBlock | null>(null)
   const nextBlockRef = useRef<ScheduleBlock | null>(null)
   const fullDurationRef = useRef<number | null>(null)
+  const restoreCategoryRef = useRef<string | null>(null)
+  const restoredRef = useRef(false)
   isRunningRef.current = isRunning
   currentBlockRef.current = currentBlock
   nextBlockRef.current = nextBlock
@@ -88,6 +91,49 @@ export default function Timer() {
   useEffect(() => {
     if (!subLoading && !isPremium) pruneOldSessions()
   }, [subLoading])
+
+  // Persist running timer to sessionStorage so navigation between tabs doesn't lose it.
+  useEffect(() => {
+    if (isRunning && activeCategory) {
+      sessionStorage.setItem("fp_timer", JSON.stringify({
+        endTimeMs: Date.now() + seconds * 1000,
+        chosenDuration,
+        categoryId: activeCategory.id,
+        title: sessionTitle,
+      }))
+    } else {
+      sessionStorage.removeItem("fp_timer")
+    }
+  }, [isRunning])
+
+  // Restore running timer state on mount (handles tab/page navigation).
+  useEffect(() => {
+    if (restoredRef.current) return
+    restoredRef.current = true
+    const raw = sessionStorage.getItem("fp_timer")
+    if (!raw) return
+    try {
+      const { endTimeMs, chosenDuration: dur, categoryId, title } = JSON.parse(raw)
+      const rem = Math.round((endTimeMs - Date.now()) / 1000)
+      if (rem > 0) {
+        selectDuration(dur)
+        jumpTo(rem)
+        setRunning(true)
+        if (title) setSessionTitle(title)
+        if (categoryId) restoreCategoryRef.current = categoryId
+      } else {
+        sessionStorage.removeItem("fp_timer")
+      }
+    } catch { sessionStorage.removeItem("fp_timer") }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Restore category once the categories list is available.
+  useEffect(() => {
+    if (!restoreCategoryRef.current || categories.length === 0) return
+    const cat = categories.find((c) => c.id === restoreCategoryRef.current)
+    if (cat) setActiveCategory(cat)
+    restoreCategoryRef.current = null
+  }, [categories])
 
   useEffect(() => {
     if (categories.length > 0 && !activeCategory) setActiveCategory(categories[0])
@@ -162,7 +208,17 @@ export default function Timer() {
         fullDurationRef.current = null
       }
       setSessionTitle(currentBlock.title || "")
-      if (settings.autoStartScheduled) toggle()
+      if (settings.autoStartScheduled) {
+        const delay = blockStartMs - Date.now()
+        if (delay <= 0) {
+          toggle()
+        } else {
+          const tid = setTimeout(() => {
+            if (!isRunningRef.current) toggle()
+          }, delay)
+          return () => clearTimeout(tid)
+        }
+      }
     }
   }, [currentBlock?.id, categories.length])
 
@@ -226,6 +282,16 @@ export default function Timer() {
       duration_seconds: fullDur, elapsed_seconds: fullDur - seconds, completed: seconds === 0,
     })
     reset(); setSessionTitle(""); setFocusMode(false); advanceSchedule()
+  }
+
+  // Quick timer: require confirmation if a session is running or paused mid-way.
+  const handleQuickTimer = (durationSec: number, label: string) => {
+    const hasActiveSession = isRunning || (seconds > 0 && seconds < chosenDuration)
+    if (hasActiveSession) {
+      setConfirmQuick({ durationSec, label })
+    } else {
+      selectDuration(durationSec)
+    }
   }
 
   if (!activeCategory) return null
@@ -312,7 +378,7 @@ export default function Timer() {
         {visibleTimers.map((d) => (
           <button
             key={d.id}
-            onClick={() => selectDuration(d.seconds)}
+            onClick={() => handleQuickTimer(d.seconds, d.label)}
             style={{
               background: chosenDuration === d.seconds ? th.text : "none",
               border: `1px solid ${th.border}`, borderRadius: 100,
@@ -348,6 +414,32 @@ export default function Timer() {
           </div>
         )}
       </div>
+
+      {/* Quick timer confirmation modal */}
+      {confirmQuick && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
+          <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 16, padding: 28, maxWidth: 320, width: "100%", textAlign: "center" }}>
+            <p style={{ color: th.text, fontSize: 16, marginBottom: 8 }}>{t.stopCurrentTimer}</p>
+            <p style={{ color: th.sub, fontSize: 14, marginBottom: 24 }}>
+              {t.stopCurrentTimerMsg.replace("{label}", confirmQuick.label)}
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <button
+                onClick={() => setConfirmQuick(null)}
+                style={{ background: "none", border: `1px solid ${th.border}`, borderRadius: 100, padding: "10px 24px", color: th.sub, fontSize: 14, cursor: "pointer" }}
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={() => { handleTerminate(); selectDuration(confirmQuick.durationSec); setConfirmQuick(null) }}
+                style={{ background: th.text, border: "none", borderRadius: 100, padding: "10px 24px", color: th.inv, fontSize: 14, cursor: "pointer", fontWeight: 500 }}
+              >
+                {t.terminate}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Background>
   )
 }

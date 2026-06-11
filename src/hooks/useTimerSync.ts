@@ -17,13 +17,17 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
   cbRef.current = onRemoteUpdate
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
-  // Broadcast is fire-and-forget — no DB write, no latency.
+  // Broadcast fires immediately for real-time updates.
+  // Presence track stores current state so late-joining devices receive it on subscribe.
   const push = useCallback((state: RemoteTimerState) => {
-    channelRef.current?.send({
+    const ch = channelRef.current
+    if (!ch) return
+    ch.send({
       type: "broadcast",
       event: "timer_update",
       payload: { ...state, device_id: DEVICE_ID },
     })
+    ch.track({ ...state, device_id: DEVICE_ID })
   }, [])
 
   useEffect(() => {
@@ -33,6 +37,7 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
       if (!user) return
       channel = supabase
         .channel(`timer:${user.id}`)
+        // Real-time updates from other devices
         .on("broadcast", { event: "timer_update" }, ({ payload }: any) => {
           if (!payload || payload.device_id === DEVICE_ID) return
           cbRef.current({
@@ -43,6 +48,26 @@ export function useTimerSync(onRemoteUpdate: (s: RemoteTimerState) => void) {
             category_color: payload.category_color,
             title: payload.title,
           })
+        })
+        // Presence sync: fires on subscribe with the current state of all tracked devices.
+        // Lets this device catch up if it joins while another device's timer is already running.
+        .on("presence", { event: "sync" }, () => {
+          if (!channel) return
+          const presState = channel.presenceState<RemoteTimerState & { device_id: string }>()
+          for (const presences of Object.values(presState)) {
+            const remote = presences[0]
+            if (remote && remote.device_id !== DEVICE_ID) {
+              cbRef.current({
+                is_running: remote.is_running,
+                end_time_ms: remote.end_time_ms,
+                seconds_remaining: remote.seconds_remaining,
+                category_name: remote.category_name,
+                category_color: remote.category_color,
+                title: remote.title,
+              })
+              break
+            }
+          }
         })
         .subscribe()
       channelRef.current = channel
