@@ -16,6 +16,7 @@ import Upgrade from "./pages/Upgrade"
 import Account from "./pages/Account"
 import SessionEdit from "./pages/SessionEdit"
 import Help from "./pages/Help"
+import Confirmed from "./pages/Confirmed"
 
 const isMobileBrowser = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
@@ -91,6 +92,7 @@ function AuthedApp() {
           <Route path="/account"      element={<Account />} />
           <Route path="/help"         element={<Help />} />
           <Route path="/session/:id"  element={<SessionEdit />} />
+          <Route path="/confirmed"    element={<Confirmed />} />
           <Route path="*"             element={<Navigate to="/" replace />} />
         </Routes>
       </main>

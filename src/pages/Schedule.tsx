@@ -230,8 +230,9 @@ export default function Schedule() {
                       <button key={d} type="button" onClick={() => setFillDurMin(d)} style={{
                         padding: "5px 11px", borderRadius: 100, fontSize: 12, cursor: "pointer",
                         border: `1px solid ${d === fillDurMin ? th.text : th.border}`,
-                        background: d === fillDurMin ? th.text : "none",
+                        background: d === fillDurMin ? th.text : "transparent",
                         color: d === fillDurMin ? th.inv : th.muted,
+                        outline: "none",
                       }}>
                         {label}
                       </button>

@@ -183,6 +183,9 @@ interface T {
   noAccount: string
   checkEmail: string
   checkEmailMsg: string
+  checkSpam: string
+  resendEmail: string
+  resendEmailSent: string
   errorLabel: string
   continueWithGoogle: string
   orSeparator: string
@@ -409,6 +412,9 @@ const en: T = {
   noAccount: "No account? Create one",
   checkEmail: "Check your email",
   checkEmailMsg: "We sent you a confirmation link.",
+  checkSpam: "If you don't see it, check your spam folder.",
+  resendEmail: "Resend email",
+  resendEmailSent: "Email sent!",
   errorLabel: "Error",
   continueWithGoogle: "Continue with Google",
   orSeparator: "or",
@@ -631,6 +637,9 @@ const fr: T = {
   noAccount: "Pas de compte ? En créer un",
   checkEmail: "Vérifiez vos e-mails",
   checkEmailMsg: "Nous vous avons envoyé un lien de confirmation.",
+  checkSpam: "Si vous ne le voyez pas, vérifiez vos spams.",
+  resendEmail: "Renvoyer l'email",
+  resendEmailSent: "Email envoyé !",
   errorLabel: "Erreur",
   continueWithGoogle: "Continuer avec Google",
   orSeparator: "ou",
@@ -853,6 +862,9 @@ const es: T = {
   noAccount: "¿Sin cuenta? Crear una",
   checkEmail: "Revisa tu correo",
   checkEmailMsg: "Te enviamos un enlace de confirmación.",
+  checkSpam: "Si no lo ves, revisa tu carpeta de spam.",
+  resendEmail: "Reenviar correo",
+  resendEmailSent: "¡Correo enviado!",
   errorLabel: "Error",
   continueWithGoogle: "Continuar con Google",
   orSeparator: "o",
@@ -1075,6 +1087,9 @@ const de: T = {
   noAccount: "Kein Konto? Eines erstellen",
   checkEmail: "Überprüfe deine E-Mails",
   checkEmailMsg: "Wir haben dir einen Bestätigungslink gesendet.",
+  checkSpam: "Falls du sie nicht siehst, überprüfe deinen Spam-Ordner.",
+  resendEmail: "E-Mail erneut senden",
+  resendEmailSent: "E-Mail gesendet!",
   errorLabel: "Fehler",
   continueWithGoogle: "Mit Google fortfahren",
   orSeparator: "oder",
@@ -1297,6 +1312,9 @@ const zh: T = {
   noAccount: "没有账户？立即注册",
   checkEmail: "请查看您的邮件",
   checkEmailMsg: "我们已向您发送确认链接。",
+  checkSpam: "如果没有收到，请检查垃圾邮件文件夹。",
+  resendEmail: "重新发送邮件",
+  resendEmailSent: "邮件已发送！",
   errorLabel: "错误",
   continueWithGoogle: "使用 Google 继续",
   orSeparator: "或",
