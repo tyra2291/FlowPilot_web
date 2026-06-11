@@ -6,7 +6,7 @@ import { useTheme } from "../hooks/useTheme"
 import { useTranslation } from "../lib/i18n"
 import Background from "../components/Background"
 
-type Period = "7d" | "30d" | "all"
+type Period = "7d" | "30d" | "all" | "custom"
 
 function computeStats(sessions: Session[], from: Date, to: Date) {
   const filtered = sessions.filter((s) => {
@@ -89,8 +89,17 @@ export default function Dashboard() {
   const { sessions } = useSessions()
   const { isPremium } = useSubscription()
   const [period, setPeriod] = useState<Period>("7d")
+  const [customFrom, setCustomFrom] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0, 10)
+  })
+  const [customTo, setCustomTo] = useState(() => new Date().toISOString().slice(0, 10))
 
   const { from, to } = useMemo(() => {
+    if (period === "custom") {
+      const f = new Date(customFrom); f.setHours(0, 0, 0, 0)
+      const t = new Date(customTo); t.setHours(23, 59, 59, 999)
+      return { from: f, to: t }
+    }
     const to = new Date(); to.setHours(23, 59, 59, 999)
     const from = new Date()
     if (period === "7d") from.setDate(from.getDate() - 6)
@@ -98,7 +107,7 @@ export default function Dashboard() {
     else from.setFullYear(2000)
     from.setHours(0, 0, 0, 0)
     return { from, to }
-  }, [period])
+  }, [period, customFrom, customTo])
 
   const stats = useMemo(() => computeStats(sessions, from, to), [sessions, from, to])
 
@@ -124,13 +133,25 @@ export default function Dashboard() {
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
         <h1 style={{ color: th.text, fontSize: 18, fontWeight: 500, letterSpacing: 4, textTransform: "uppercase", marginBottom: 20 }}>{t.dashboard}</h1>
 
-        {/* Period pills */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-          {(["7d","30d","all"] as Period[]).map((p) => (
-            <button key={p} onClick={() => setPeriod(p)} style={pill(th, period === p)}>
-              {p === "7d" ? t.thisWeek : p === "30d" ? t.thisMonth : t.allTimeShort}
-            </button>
-          ))}
+        {/* Period pills + optional custom date inputs */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: period === "custom" ? 12 : 0 }}>
+            {(["7d","30d","all","custom"] as Period[]).map((p) => (
+              <button key={p} onClick={() => setPeriod(p)} style={pill(th, period === p)}>
+                {p === "7d" ? t.thisWeek : p === "30d" ? t.thisMonth : p === "all" ? t.allTimeShort : t.customPeriod}
+              </button>
+            ))}
+          </div>
+          {period === "custom" && (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ color: th.sub, fontSize: 13 }}>{t.dateFrom}</span>
+              <input type="date" value={customFrom} max={customTo}
+                onChange={e => setCustomFrom(e.target.value)} style={dateInput(th)} />
+              <span style={{ color: th.sub, fontSize: 13 }}>{t.dateTo}</span>
+              <input type="date" value={customTo} min={customFrom} max={new Date().toISOString().slice(0, 10)}
+                onChange={e => setCustomTo(e.target.value)} style={dateInput(th)} />
+            </div>
+          )}
         </div>
 
         {stats.count === 0 ? (
@@ -177,4 +198,10 @@ export default function Dashboard() {
 const pill = (th: { text: string; border: string; inv: string }, active: boolean): React.CSSProperties => ({
   background: active ? th.text : "none", border: `1px solid ${th.border}`, borderRadius: 100,
   padding: "8px 20px", color: active ? th.inv : th.text, fontSize: 13, cursor: "pointer",
+})
+
+const dateInput = (th: any): React.CSSProperties => ({
+  background: th.card, color: th.text, border: `1px solid ${th.border}`,
+  borderRadius: 8, padding: "6px 10px", fontSize: 13, cursor: "pointer",
+  outline: "none", colorScheme: "dark" as any,
 })

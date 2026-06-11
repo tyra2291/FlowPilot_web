@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSessions, Session } from "../hooks/useSessions"
 import { useSubscription } from "../hooks/useSubscription"
@@ -6,6 +6,8 @@ import { useTheme } from "../hooks/useTheme"
 import { useTranslation } from "../lib/i18n"
 import Background from "../components/Background"
 import { supabase } from "../lib/supabase"
+
+type Period = "7d" | "30d" | "all" | "custom"
 
 const fmt = (s: number) => {
   const m = Math.floor(s / 60); const sec = s % 60
@@ -39,6 +41,26 @@ export default function History() {
   const { sessions, setSessions, pruneOldSessions, loadSessions } = useSessions()
   const { isPremium } = useSubscription()
   const [catFilter, setCatFilter] = useState("")
+  const [period, setPeriod] = useState<Period>("all")
+  const [customFrom, setCustomFrom] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0, 10)
+  })
+  const [customTo, setCustomTo] = useState(() => new Date().toISOString().slice(0, 10))
+
+  const { from, to } = useMemo(() => {
+    if (period === "custom") {
+      const f = new Date(customFrom); f.setHours(0, 0, 0, 0)
+      const t = new Date(customTo); t.setHours(23, 59, 59, 999)
+      return { from: f, to: t }
+    }
+    const to = new Date(); to.setHours(23, 59, 59, 999)
+    const from = new Date()
+    if (period === "7d") from.setDate(from.getDate() - 6)
+    else if (period === "30d") from.setDate(from.getDate() - 29)
+    else from.setFullYear(2000)
+    from.setHours(0, 0, 0, 0)
+    return { from, to }
+  }, [period, customFrom, customTo])
 
   useEffect(() => {
     if (!isPremium) pruneOldSessions()
@@ -46,7 +68,13 @@ export default function History() {
   }, [])
 
   const categories = Array.from(new Set(sessions.map((s) => s.category_name))).sort()
-  const filtered = catFilter ? sessions.filter((s) => s.category_name === catFilter) : sessions
+  const filtered = useMemo(() => {
+    let result = period !== "all"
+      ? sessions.filter(s => { const d = new Date(s.completed_at); return d >= from && d <= to })
+      : sessions
+    if (catFilter) result = result.filter(s => s.category_name === catFilter)
+    return result
+  }, [sessions, period, from, to, catFilter])
   const groups = groupByDate(filtered)
 
   const handleDelete = async (id: string) => {
@@ -110,6 +138,27 @@ export default function History() {
           </div>
         </div>
 
+        {/* Period filter */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: period === "custom" ? 10 : 0 }}>
+            {(["7d","30d","all","custom"] as Period[]).map((p) => (
+              <button key={p} onClick={() => setPeriod(p)} style={pillBtn(period === p)}>
+                {p === "7d" ? t.thisWeek : p === "30d" ? t.thisMonth : p === "all" ? t.allTimeShort : t.customPeriod}
+              </button>
+            ))}
+          </div>
+          {period === "custom" && (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ color: th.sub, fontSize: 13 }}>{t.dateFrom}</span>
+              <input type="date" value={customFrom} max={customTo}
+                onChange={e => setCustomFrom(e.target.value)} style={dateInputStyle(th)} />
+              <span style={{ color: th.sub, fontSize: 13 }}>{t.dateTo}</span>
+              <input type="date" value={customTo} min={customFrom} max={new Date().toISOString().slice(0, 10)}
+                onChange={e => setCustomTo(e.target.value)} style={dateInputStyle(th)} />
+            </div>
+          )}
+        </div>
+
         {/* Category filter */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           <button onClick={() => setCatFilter("")} style={pillBtn(catFilter === "")}>{t.allCategories}</button>
@@ -165,3 +214,9 @@ export default function History() {
     </Background>
   )
 }
+
+const dateInputStyle = (th: any): React.CSSProperties => ({
+  background: th.card, color: th.text, border: `1px solid ${th.border}`,
+  borderRadius: 8, padding: "6px 10px", fontSize: 13, cursor: "pointer",
+  outline: "none", colorScheme: "dark" as any,
+})
