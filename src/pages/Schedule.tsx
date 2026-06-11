@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSchedule, ScheduleBlock } from "../hooks/useSchedule"
 import { useCategories } from "../hooks/useCategories"
 import { useSubscription } from "../hooks/useSubscription"
@@ -9,9 +9,19 @@ import { useNavigate } from "react-router-dom"
 
 const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
 const DAYS_FULL  = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+const DUR_OPTIONS = [5,10,15,20,25,30,35,40,45,50,55,60,75,90,105,120,150,180,210,240]
 
 const fmt = (s: number) => {
-  const m = Math.floor(s / 60); return `${m}m`
+  const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60)
+  if (h > 0 && m > 0) return `${h}h ${m}m`
+  if (h > 0) return `${h}h`
+  return `${m}m`
+}
+
+const endTime = (start: string, durationSec: number) => {
+  const [h, m] = start.split(":").map(Number)
+  const total = h * 60 + m + Math.floor(durationSec / 60)
+  return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`
 }
 
 export default function Schedule() {
@@ -33,6 +43,17 @@ export default function Schedule() {
   const [fDuration, setFDuration] = useState("25")
   const [fCatName, setFCatName]   = useState("")
   const [fCatColor, setFCatColor] = useState("")
+
+  const [fillFormOpen, setFillFormOpen] = useState(false)
+  const [fillDurMin, setFillDurMin]     = useState(25)
+  const [fillCatName, setFillCatName]   = useState("")
+  const [fillCatColor, setFillCatColor] = useState("")
+
+  useEffect(() => {
+    if (categories.length > 0 && !fillCatName) {
+      setFillCatName(categories[0].name); setFillCatColor(categories[0].color)
+    }
+  }, [categories])
 
   const openAdd = () => {
     setEditingBlock(null)
@@ -59,6 +80,40 @@ export default function Schedule() {
     if (editingBlock) await updateBlock(editingBlock.id, payload)
     else await addBlock(payload)
     setFormOpen(false); setEditingBlock(null)
+  }
+
+  const handleDeleteDay = (dow: number) => {
+    const dayBlocks = blocks.filter(b => b.day_of_week === dow)
+    if (dayBlocks.length === 0) return
+    if (!confirm(t.deleteBlocksDayConfirm(DAYS_FULL[dow]))) return
+    dayBlocks.forEach(b => deleteBlock(b.id))
+  }
+
+  const handleFill95 = async () => {
+    if (!fillCatName) return
+    const dur = fillDurMin
+    const occupied = blocks
+      .filter(b => b.day_of_week === selectedDow)
+      .map(b => { const [h, m] = b.start_time.split(":").map(Number); const s = h * 60 + m; return { start: s, end: s + Math.floor(b.duration_seconds / 60) } })
+    const toAdd: number[] = []
+    let cursor = 9 * 60
+    while (cursor + dur <= 17 * 60) {
+      const inside = occupied.find(o => o.start <= cursor && cursor < o.end)
+      if (inside) { cursor = inside.end; continue }
+      const overlap = occupied.find(o => cursor < o.end && o.start < cursor + dur)
+      if (overlap) { cursor = overlap.end; continue }
+      toAdd.push(cursor); cursor += dur
+    }
+    if (toAdd.length === 0) { alert(t.fill95Empty); return }
+    for (const startMin of toAdd) {
+      await addBlock({
+        title: null, category_name: fillCatName, category_color: fillCatColor,
+        duration_seconds: dur * 60,
+        start_time: `${String(Math.floor(startMin / 60)).padStart(2, "0")}:${String(startMin % 60).padStart(2, "0")}`,
+        day_of_week: selectedDow,
+      })
+    }
+    setFillFormOpen(false)
   }
 
   const daysToShow = view === "day" ? [selectedDow] : [0,1,2,3,4,5,6]
@@ -111,8 +166,15 @@ export default function Schedule() {
           return (
             <div key={dow}>
               {view === "week" && (
-                <div style={{ color: th.sub, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, marginTop: 16 }}>
-                  {DAYS_FULL[dow]}{dow === today ? ` · ${t.todayBadge}` : ""}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, marginTop: 16 }}>
+                  <span style={{ color: th.sub, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" }}>
+                    {DAYS_FULL[dow]}{dow === today ? ` · ${t.todayBadge}` : ""}
+                  </span>
+                  {dayBlocks.length > 0 && (
+                    <button onClick={() => handleDeleteDay(dow)} style={{ background: "none", border: "none", cursor: "pointer", color: "#FF6584", fontSize: 12, padding: 0 }}>
+                      {t.deleteAll}
+                    </button>
+                  )}
                 </div>
               )}
               {dayBlocks.length === 0 && view === "day" && (
@@ -123,7 +185,7 @@ export default function Schedule() {
                   <div style={{ width: 10, height: 10, borderRadius: 5, background: b.category_color, flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
                     <span style={{ color: th.text, fontSize: 14 }}>{b.title || b.category_name}</span>
-                    <span style={{ color: th.muted, fontSize: 12, marginLeft: 8 }}>{b.start_time} · {fmt(b.duration_seconds)}</span>
+                    <span style={{ color: th.muted, fontSize: 12, marginLeft: 8 }}>{b.start_time} → {endTime(b.start_time, b.duration_seconds)} · {fmt(b.duration_seconds)}</span>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); if (confirm(t.deleteBlockConfirm(b.title || b.category_name, b.start_time))) deleteBlock(b.id) }}
@@ -135,12 +197,64 @@ export default function Schedule() {
           )
         })}
 
-        {/* Add button */}
-        <button onClick={openAdd} style={{ width: "100%", marginTop: 12, padding: "14px", borderRadius: 10, border: `1px solid ${th.border}`, background: "none", color: th.sub, fontSize: 14, cursor: "pointer", textAlign: "left" }}>
-          + {t.addTo(DAYS_FULL[selectedDow])}
-        </button>
+        {/* Action buttons: Add, Fill 9–5, Delete day */}
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+          <button onClick={() => { openAdd(); setFillFormOpen(false) }} style={{ flex: 1, minWidth: 120, padding: "12px 16px", borderRadius: 10, border: `1px solid ${th.border}`, background: "none", color: th.sub, fontSize: 14, cursor: "pointer", textAlign: "left" }}>
+            + {t.addTo(DAYS_FULL[selectedDow])}
+          </button>
+          <button
+            onClick={() => { setFillFormOpen(v => !v); setFormOpen(false); setEditingBlock(null) }}
+            style={{ padding: "12px 16px", borderRadius: 10, border: `1px solid ${th.border}`, background: fillFormOpen ? th.card : "none", color: th.sub, fontSize: 14, cursor: "pointer" }}
+          >
+            {t.fill95}
+          </button>
+          {blocks.filter(b => b.day_of_week === selectedDow).length > 0 && (
+            <button onClick={() => handleDeleteDay(selectedDow)} style={{ padding: "12px 16px", borderRadius: 10, border: "1px solid #FF658440", background: "none", color: "#FF6584", fontSize: 14, cursor: "pointer" }}>
+              {t.deleteAll}
+            </button>
+          )}
+        </div>
 
-        {/* Form */}
+        {/* Fill 9–5 form */}
+        {fillFormOpen && (
+          <div style={{ marginTop: 12, padding: 20, borderRadius: 12, border: `1px solid ${th.border}`, background: th.card }}>
+            <div style={{ color: th.sub, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>{t.fill95Title}</div>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
+              <div>
+                <div style={labelStyle(th)}>Min</div>
+                <select
+                  value={fillDurMin}
+                  onChange={e => setFillDurMin(Number(e.target.value))}
+                  style={{ ...input, width: "auto", colorScheme: "dark" as any }}
+                >
+                  {DUR_OPTIONS.map(d => {
+                    const h = Math.floor(d / 60); const m = d % 60
+                    const label = d < 60 ? `${d}m` : (m > 0 ? `${h}h ${m}m` : `${h}h`)
+                    return <option key={d} value={d}>{label}</option>
+                  })}
+                </select>
+              </div>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={labelStyle(th)}>{t.categoryField}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {categories.map(cat => (
+                    <button key={cat.id} type="button"
+                      onClick={() => { setFillCatName(cat.name); setFillCatColor(cat.color) }}
+                      style={{ background: "none", cursor: "pointer", padding: "6px 14px", borderRadius: 100, border: `1px solid ${fillCatName === cat.name ? cat.color : th.border}`, color: fillCatName === cat.name ? cat.color : th.sub, fontSize: 13 }}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <button onClick={handleFill95} style={{ background: th.text, border: "none", borderRadius: 100, padding: "10px 28px", color: th.inv, fontSize: 14, cursor: "pointer" }}>
+              {t.fill95Apply}
+            </button>
+          </div>
+        )}
+
+        {/* Add / Edit form */}
         {formOpen && (
           <div style={{ marginTop: 16, padding: 20, borderRadius: 12, border: `1px solid ${th.border}`, background: th.card }}>
             <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>

@@ -113,6 +113,11 @@ interface T {
   add: string
   deleteBlock: string
   deleteBlockConfirm: F2
+  deleteBlocksDayConfirm: F1
+  fill95: string
+  fill95Title: string
+  fill95Apply: string
+  fill95Empty: string
   noCategorySelected: string
   pleaseSelectCategory: string
   invalidTime: string
@@ -344,6 +349,11 @@ const en: T = {
   add: "Add",
   deleteBlock: "Delete block",
   deleteBlockConfirm: (n, t) => `Delete "${n}" at ${t}?`,
+  deleteBlocksDayConfirm: (day) => `Delete all blocks for ${day}?`,
+  fill95: "Fill 9–5",
+  fill95Title: "Fill 9 to 5",
+  fill95Apply: "Apply",
+  fill95Empty: "No gaps to fill between 9:00 and 17:00",
   noCategorySelected: "No category",
   pleaseSelectCategory: "Please select a category.",
   invalidTime: "Invalid time",
@@ -561,6 +571,11 @@ const fr: T = {
   add: "Ajouter",
   deleteBlock: "Supprimer le bloc",
   deleteBlockConfirm: (n, time) => `Supprimer « ${n} » à ${time} ?`,
+  deleteBlocksDayConfirm: (day) => `Supprimer tous les blocs de ${day} ?`,
+  fill95: "Remplir 9–17",
+  fill95Title: "Remplir 9h–17h",
+  fill95Apply: "Appliquer",
+  fill95Empty: "Aucun créneau disponible entre 9h et 17h",
   noCategorySelected: "Aucune catégorie",
   pleaseSelectCategory: "Veuillez sélectionner une catégorie.",
   invalidTime: "Heure invalide",
@@ -778,6 +793,11 @@ const es: T = {
   add: "Agregar",
   deleteBlock: "Eliminar bloque",
   deleteBlockConfirm: (n, t) => `¿Eliminar "${n}" a las ${t}?`,
+  deleteBlocksDayConfirm: (day) => `¿Eliminar todos los bloques de ${day}?`,
+  fill95: "Rellenar 9–17",
+  fill95Title: "Rellenar 9 a 17",
+  fill95Apply: "Aplicar",
+  fill95Empty: "Sin huecos disponibles entre las 9:00 y las 17:00",
   noCategorySelected: "Sin categoría",
   pleaseSelectCategory: "Por favor selecciona una categoría.",
   invalidTime: "Hora inválida",
@@ -995,6 +1015,11 @@ const de: T = {
   add: "Hinzufügen",
   deleteBlock: "Block löschen",
   deleteBlockConfirm: (n, t) => `"${n}" um ${t} löschen?`,
+  deleteBlocksDayConfirm: (day) => `Alle Blöcke für ${day} löschen?`,
+  fill95: "Ausfüllen 9–17",
+  fill95Title: "9 bis 17 Uhr füllen",
+  fill95Apply: "Anwenden",
+  fill95Empty: "Keine freien Slots zwischen 9:00 und 17:00",
   noCategorySelected: "Keine Kategorie",
   pleaseSelectCategory: "Bitte wähle eine Kategorie aus.",
   invalidTime: "Ungültige Uhrzeit",
@@ -1212,6 +1237,11 @@ const zh: T = {
   add: "添加",
   deleteBlock: "删除块",
   deleteBlockConfirm: (n, t) => `删除"${n}"（${t}）？`,
+  deleteBlocksDayConfirm: (day) => `删除 ${day} 的所有时间块？`,
+  fill95: "填满 9–17",
+  fill95Title: "填满 9 到 17 时",
+  fill95Apply: "应用",
+  fill95Empty: "9:00 到 17:00 之间没有可填充的空位",
   noCategorySelected: "未选择类别",
   pleaseSelectCategory: "请选择一个类别。",
   invalidTime: "时间无效",
