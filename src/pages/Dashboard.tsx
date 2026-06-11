@@ -41,7 +41,7 @@ function DonutChart({ catTotals, th }: { catTotals: Record<string, { seconds: nu
   const entries = Object.entries(catTotals).sort((a, b) => b[1].seconds - a[1].seconds)
   const total = entries.reduce((sum, [, v]) => sum + v.seconds, 0)
   if (total === 0 || entries.length === 0) return null
-  const R = 70
+  const R = 140
   const C = 2 * Math.PI * R
   let cum = 0
   const slices = entries.map(([name, { seconds, color }]) => {
@@ -52,22 +52,22 @@ function DonutChart({ catTotals, th }: { catTotals: Record<string, { seconds: nu
     return { name, color, dashLen, dashOffset }
   })
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginBottom: 20 }}>
-      <svg width={160} height={160} viewBox="0 0 200 200">
-        <circle cx={100} cy={100} r={R} fill="none" stroke={th.track} strokeWidth={28} />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+      <svg width={320} height={320} viewBox="0 0 400 400">
+        <circle cx={200} cy={200} r={R} fill="none" stroke={th.track} strokeWidth={44} />
         {slices.map(({ name, color, dashLen, dashOffset }) => (
-          <circle key={name} cx={100} cy={100} r={R} fill="none" stroke={color}
-            strokeWidth={28} strokeDasharray={`${dashLen} ${C - dashLen}`} strokeDashoffset={dashOffset} />
+          <circle key={name} cx={200} cy={200} r={R} fill="none" stroke={color}
+            strokeWidth={44} strokeDasharray={`${dashLen} ${C - dashLen}`} strokeDashoffset={dashOffset} />
         ))}
-        <text x={100} y={94} textAnchor="middle" fill={th.text} fontSize={20} fontWeight="300">{fmtH(total)}</text>
-        <text x={100} y={114} textAnchor="middle" fill={th.muted} fontSize={9} letterSpacing={2}>TOTAL</text>
+        <text x={200} y={190} textAnchor="middle" fill={th.text} fontSize={36} fontWeight="300">{fmtH(total)}</text>
+        <text x={200} y={220} textAnchor="middle" fill={th.muted} fontSize={16} letterSpacing={3}>TOTAL</text>
       </svg>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", justifyContent: "center", maxWidth: 400 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", justifyContent: "center", maxWidth: 500 }}>
         {entries.map(([name, { seconds, color }]) => (
-          <div key={name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
-            <span style={{ color: th.sub, fontSize: 12 }}>{name}</span>
-            <span style={{ color: th.muted, fontSize: 11 }}>{Math.round(seconds / total * 100)}%</span>
+          <div key={name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: color, flexShrink: 0 }} />
+            <span style={{ color: th.sub, fontSize: 13 }}>{name}</span>
+            <span style={{ color: th.muted, fontSize: 12 }}>{Math.round(seconds / total * 100)}%</span>
           </div>
         ))}
       </div>
@@ -151,9 +151,8 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* By category — donut chart + bar charts */}
-            <div style={{ color: th.sub, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{t.byCategory}</div>
-            <DonutChart catTotals={stats.catTotals} th={th} />
+            {/* By category — bar charts */}
+            <div style={{ color: th.sub, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>{t.byCategory}</div>
             {Object.entries(stats.catTotals).sort((a, b) => b[1].seconds - a[1].seconds).map(([name, { seconds, color }]) => (
               <div key={name} style={{ marginBottom: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -165,6 +164,9 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
+
+            {/* Distribution donut — at the bottom, larger */}
+            <DonutChart catTotals={stats.catTotals} th={th} />
           </>
         )}
       </div>
