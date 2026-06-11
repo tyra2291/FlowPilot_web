@@ -12,38 +12,15 @@ export default function Account() {
   const navigate = useNavigate()
   const { isPremium } = useSubscription()
 
-  const [email, setEmail]       = useState("")
-  const [displayName, setDisplayName] = useState("")
-  const [nameSaved, setNameSaved] = useState(false)
-  const [newPwd, setNewPwd]     = useState("")
-  const [confirmPwd, setConfirmPwd] = useState("")
-  const [pwdMsg, setPwdMsg]     = useState("")
-  const [isGoogle, setIsGoogle] = useState(false)
+  const [email, setEmail] = useState("")
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const user = data.user
       if (!user) return
       setEmail(user.email ?? "")
-      setDisplayName(user.user_metadata?.full_name ?? "")
-      const identities = user.identities ?? []
-      setIsGoogle(identities.some((id) => id.provider === "google"))
     })
   }, [])
-
-  const handleSaveName = async () => {
-    const { error } = await supabase.auth.updateUser({ data: { full_name: displayName } })
-    if (!error) setNameSaved(true)
-  }
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault(); setPwdMsg("")
-    if (newPwd !== confirmPwd) { setPwdMsg(t.passwordsNoMatch); return }
-    if (newPwd.length < 6) { setPwdMsg(t.passwordTooShort); return }
-    const { error } = await supabase.auth.updateUser({ password: newPwd })
-    if (error) setPwdMsg(error.message)
-    else { setPwdMsg(t.passwordUpdated); setNewPwd(""); setConfirmPwd("") }
-  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -63,10 +40,6 @@ export default function Account() {
     navigate("/login")
   }
 
-  const input: React.CSSProperties = {
-    width: "100%", padding: "12px 16px", borderRadius: 10, border: `1px solid ${th.border}`,
-    background: "transparent", color: th.text, fontSize: 15, outline: "none", boxSizing: "border-box",
-  }
   const sectionTitle: React.CSSProperties = { color: th.sub, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12, marginTop: 24 }
 
   return (
@@ -82,34 +55,6 @@ export default function Account() {
         </div>
 
         <p style={{ color: th.sub, fontSize: 14, marginBottom: 24 }}>{email}</p>
-
-        {/* Display name — only for non-Google accounts */}
-        {!isGoogle && (
-          <>
-            <div style={sectionTitle}>{t.accountInfo}</div>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <input value={displayName} onChange={(e) => { setDisplayName(e.target.value); setNameSaved(false) }} placeholder={t.displayName} style={{ ...input, flex: 1 }} />
-              <button onClick={handleSaveName} style={{ background: th.text, border: "none", borderRadius: 100, padding: "12px 20px", color: th.inv, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}>
-                {nameSaved ? t.nameSaved : t.saveChanges}
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Password */}
-        <div style={sectionTitle}>{t.security}</div>
-        {isGoogle ? (
-          <p style={{ color: th.muted, fontSize: 13 }}>{t.googlePasswordNote}</p>
-        ) : (
-          <form onSubmit={handleUpdatePassword} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder={t.newPassword} style={input} />
-            <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} placeholder={t.confirmPassword} style={input} />
-            {pwdMsg && <p style={{ color: pwdMsg === t.passwordUpdated ? "#43B89C" : "#FF6584", fontSize: 13, margin: 0 }}>{pwdMsg}</p>}
-            <button type="submit" style={{ background: th.text, border: "none", borderRadius: 100, padding: "12px 24px", color: th.inv, fontSize: 14, cursor: "pointer", alignSelf: "flex-start" }}>
-              {t.updatePassword}
-            </button>
-          </form>
-        )}
 
         {/* Sign out */}
         <div style={sectionTitle}>Session</div>
