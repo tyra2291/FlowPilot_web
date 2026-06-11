@@ -225,7 +225,7 @@ export default function Schedule() {
                 <select
                   value={fillDurMin}
                   onChange={e => setFillDurMin(Number(e.target.value))}
-                  style={{ ...input, width: "auto", colorScheme: "dark" as any }}
+                  style={{ ...input, width: "auto", background: th.card, colorScheme: "dark" as any }}
                 >
                   {DUR_OPTIONS.map(d => {
                     const h = Math.floor(d / 60); const m = d % 60
