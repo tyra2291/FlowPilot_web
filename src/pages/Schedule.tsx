@@ -220,19 +220,24 @@ export default function Schedule() {
           <div style={{ marginTop: 12, padding: 20, borderRadius: 12, border: `1px solid ${th.border}`, background: th.card }}>
             <div style={{ color: th.sub, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>{t.fill95Title}</div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
-              <div>
-                <div style={labelStyle(th)}>Min</div>
-                <select
-                  value={fillDurMin}
-                  onChange={e => setFillDurMin(Number(e.target.value))}
-                  style={{ ...input, width: "auto", background: th.card, colorScheme: "dark" as any }}
-                >
+              <div style={{ flex: 1 }}>
+                <div style={labelStyle(th)}>{t.durationField}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {DUR_OPTIONS.map(d => {
                     const h = Math.floor(d / 60); const m = d % 60
                     const label = d < 60 ? `${d}m` : (m > 0 ? `${h}h ${m}m` : `${h}h`)
-                    return <option key={d} value={d}>{label}</option>
+                    return (
+                      <button key={d} type="button" onClick={() => setFillDurMin(d)} style={{
+                        padding: "5px 11px", borderRadius: 100, fontSize: 12, cursor: "pointer",
+                        border: `1px solid ${d === fillDurMin ? th.text : th.border}`,
+                        background: d === fillDurMin ? th.text : "none",
+                        color: d === fillDurMin ? th.inv : th.muted,
+                      }}>
+                        {label}
+                      </button>
+                    )
                   })}
-                </select>
+                </div>
               </div>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={labelStyle(th)}>{t.categoryField}</div>
