@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase"
 import Background from "../components/Background"
 
 const FEATURES = (t: any) => [
+  "Web App access",
   t.featureSchedule, t.featureHistory, t.featureCategories,
   t.featureTimers, t.featurePeriods,
 ]
@@ -82,6 +83,15 @@ export default function Upgrade() {
         >
           {t.restoreStatus}
         </button>
+
+        <div style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${th.border}` }}>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            style={{ background: "none", border: "none", cursor: "pointer", color: th.muted, fontSize: 13, padding: 0 }}
+          >
+            {t.signOut}
+          </button>
+        </div>
       </div>
     </Background>
   )
