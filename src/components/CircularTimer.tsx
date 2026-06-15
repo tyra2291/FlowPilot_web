@@ -14,6 +14,8 @@ interface Props {
   useGradient?: boolean
   textColor?: string
   trackColor?: string
+  lapPhase?: "fill" | "erase"
+  lapPhaseProgress?: number
 }
 
 const fmt = (s: number) =>
@@ -33,6 +35,8 @@ export default function CircularTimer({
   useGradient = false,
   textColor = "#FFFFFF",
   trackColor = "#1A1A1A",
+  lapPhase,
+  lapPhaseProgress,
 }: Props) {
   const [addExpanded, setAddExpanded] = useState(false)
   const strokeWidth = 3
@@ -53,16 +57,27 @@ export default function CircularTimer({
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={radius} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
+        {/* Main arc: fill/erase phases both move clockwise when lapPhase is set */}
         <circle
           cx={size / 2} cy={size / 2} r={radius}
           stroke={useGradient ? "url(#circleGradient)" : color}
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          strokeDashoffset={
+            lapPhase !== undefined && lapPhaseProgress !== undefined
+              ? (lapPhase === "fill"
+                ? circumference * (1 - lapPhaseProgress)
+                : circumference * lapPhaseProgress)
+              : offset
+          }
           strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: "stroke-dashoffset 0.5s linear" }}
+          transform={`rotate(${
+            lapPhase === "erase" && lapPhaseProgress !== undefined
+              ? -90 + lapPhaseProgress * 360
+              : -90
+          } ${size / 2} ${size / 2})`}
+          style={{ transition: lapPhase !== undefined ? "none" : "stroke-dashoffset 0.5s linear" }}
         />
       </svg>
 

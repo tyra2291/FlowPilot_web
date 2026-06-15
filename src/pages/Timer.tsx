@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTimer } from "../hooks/useTimer"
+import { useStopwatch } from "../hooks/useStopwatch"
 import { useCategories, Category } from "../hooks/useCategories"
 import { useQuickTimers } from "../hooks/useQuickTimers"
 import { useSessions } from "../hooks/useSessions"
@@ -28,12 +29,14 @@ export default function Timer() {
   const navigate = useNavigate()
 
   const { seconds, chosenDuration, isRunning, progress, selectDuration, reset, toggle, addTime, jumpTo, setRunning } = useTimer(25 * 60)
+  const sw = useStopwatch()
   const { categories } = useCategories()
   const { quickTimers } = useQuickTimers()
   const { addSession, pruneOldSessions } = useSessions()
   const { isPremium, loading: subLoading } = useSubscription()
   const { blocks: scheduleBlocks } = useSchedule()
 
+  const [mode, setMode] = useState<"timer" | "stopwatch">("timer")
   const [activeCategory, setActiveCategory] = useState<Category | null>(null)
   const [sessionTitle, setSessionTitle] = useState("")
   const [focusMode, setFocusMode] = useState(false)
@@ -52,6 +55,7 @@ export default function Timer() {
   const fullDurationRef = useRef<number | null>(null)
   const restoreCategoryRef = useRef<string | null>(null)
   const restoredRef = useRef(false)
+  const prevBlockIdRef = useRef<string | undefined>(undefined)
   isRunningRef.current = isRunning
   currentBlockRef.current = currentBlock
   nextBlockRef.current = nextBlock
@@ -139,8 +143,9 @@ export default function Timer() {
     if (categories.length > 0 && !activeCategory) setActiveCategory(categories[0])
   }, [categories])
 
-  // Auto-save on completion
+  // Auto-save on completion (timer mode only)
   useEffect(() => {
+    if (mode === "stopwatch") return
     if (seconds === 0 && activeCategory) {
       const fullDur = fullDurationRef.current ?? chosenDuration
       fullDurationRef.current = null
@@ -190,35 +195,51 @@ export default function Timer() {
     return () => clearInterval(interval)
   }, [scheduleBlocks])
 
-  // Apply current block
+  // Apply current block and auto-start at the scheduled time.
+  // If a timer is already running when a new block starts, saves it and switches over.
   useEffect(() => {
-    if (currentBlock && categories.length > 0 && !isRunning) {
-      const cat = categories.find((c) => c.name === currentBlock.category_name)
-      if (cat) setActiveCategory(cat)
-      const now = new Date()
-      const [h, m] = currentBlock.start_time.split(":").map(Number)
-      const blockStartMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0).getTime()
-      const elapsedSec = Math.max(0, Math.floor((Date.now() - blockStartMs) / 1000))
-      const remainingSec = Math.max(0, currentBlock.duration_seconds - elapsedSec)
-      if (remainingSec > 30) {
-        selectDuration(remainingSec)
-        fullDurationRef.current = elapsedSec > 30 ? currentBlock.duration_seconds : null
-      } else {
-        selectDuration(currentBlock.duration_seconds)
-        fullDurationRef.current = null
-      }
-      setSessionTitle(currentBlock.title || "")
-      if (settings.autoStartScheduled) {
-        const delay = blockStartMs - Date.now()
-        if (delay <= 0) {
-          toggle()
-        } else {
-          const tid = setTimeout(() => {
-            if (!isRunningRef.current) toggle()
-          }, delay)
-          return () => clearTimeout(tid)
-        }
-      }
+    if (!currentBlock || categories.length === 0) return
+
+    const blockChanged = currentBlock.id !== prevBlockIdRef.current
+    prevBlockIdRef.current = currentBlock.id
+
+    if (!blockChanged && isRunningRef.current) return
+
+    if (blockChanged && isRunningRef.current && activeCategory) {
+      const fullDur = fullDurationRef.current ?? chosenDuration
+      fullDurationRef.current = null
+      addSession({
+        title: sessionTitle || null,
+        category_name: activeCategory.name,
+        category_color: activeCategory.color,
+        duration_seconds: fullDur,
+        elapsed_seconds: fullDur - seconds,
+        completed: false,
+      })
+      setSessionTitle("")
+    }
+
+    const cat = categories.find((c) => c.name === currentBlock.category_name)
+    if (cat) setActiveCategory(cat)
+    const now = new Date()
+    const [h, m] = currentBlock.start_time.split(":").map(Number)
+    const blockStartMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0).getTime()
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - blockStartMs) / 1000))
+    const remainingSec = Math.max(0, currentBlock.duration_seconds - elapsedSec)
+    if (remainingSec > 30) {
+      selectDuration(remainingSec)
+      fullDurationRef.current = elapsedSec > 30 ? currentBlock.duration_seconds : null
+    } else {
+      selectDuration(currentBlock.duration_seconds)
+      fullDurationRef.current = null
+    }
+    setSessionTitle(currentBlock.title || "")
+    if (settings.autoStartScheduled && remainingSec > 0) {
+      const delay = blockStartMs - Date.now()
+      const tid = setTimeout(() => {
+        if (!isRunningRef.current) toggle()
+      }, Math.max(0, delay))
+      return () => clearTimeout(tid)
     }
   }, [currentBlock?.id, categories.length])
 
@@ -250,6 +271,14 @@ export default function Timer() {
 
   const handleTerminate = () => {
     if (!activeCategory) return
+    if (mode === "stopwatch") {
+      if (sw.elapsed >= 30) addSession({
+        title: sessionTitle || null, category_name: activeCategory.name, category_color: activeCategory.color,
+        duration_seconds: sw.elapsed, elapsed_seconds: sw.elapsed, completed: false,
+      })
+      sw.reset(); setSessionTitle("")
+      return
+    }
     const fullDur = fullDurationRef.current ?? chosenDuration
     fullDurationRef.current = null
     addSession({
@@ -275,6 +304,14 @@ export default function Timer() {
 
   const handleNext = () => {
     if (!activeCategory) return
+    if (mode === "stopwatch") {
+      if (sw.elapsed >= 30) addSession({
+        title: sessionTitle || null, category_name: activeCategory.name, category_color: activeCategory.color,
+        duration_seconds: sw.elapsed, elapsed_seconds: sw.elapsed, completed: true,
+      })
+      sw.reset(); setSessionTitle("")
+      return
+    }
     const fullDur = fullDurationRef.current ?? chosenDuration
     fullDurationRef.current = null
     addSession({
@@ -284,12 +321,21 @@ export default function Timer() {
     reset(); setSessionTitle(""); setFocusMode(false); advanceSchedule()
   }
 
+  const switchMode = (next: "timer" | "stopwatch") => {
+    if (next === mode) return
+    if (isRunning) { reset(); setSessionTitle("") }
+    if (sw.isRunning) { sw.reset(); setSessionTitle("") }
+    setMode(next)
+  }
+
   // Quick timer: require confirmation if a session is running or paused mid-way.
   const handleQuickTimer = (durationSec: number, label: string) => {
-    const hasActiveSession = isRunning || (seconds > 0 && seconds < chosenDuration)
-    if (hasActiveSession) {
+    const timerActive = isRunning || (seconds > 0 && seconds < chosenDuration)
+    const swActive = mode === "stopwatch" && (sw.isRunning || sw.elapsed > 0)
+    if (timerActive || swActive) {
       setConfirmQuick({ durationSec, label })
     } else {
+      if (mode === "stopwatch") setMode("timer")
       selectDuration(durationSec)
     }
   }
@@ -304,7 +350,17 @@ export default function Timer() {
   const activeCircleColor = interruptionActive ? "#FF6584" : circleColor
   const activeAccentColor = interruptionActive ? "#FF6584" : accentColor
   const interruptProp = settings.interruptionEnabled ? handleInterrupt : undefined
-  const nextDisabled = nextBlock === null
+  const nextDisabled = mode === "timer" && nextBlock === null
+
+  // Lap-based circle animation: even laps fill (empty→full), odd laps empty (full→empty).
+  const LAP_DURATION          = 60
+  const timerElapsed          = chosenDuration - seconds
+  const timerLapNumber        = Math.floor(timerElapsed / LAP_DURATION)
+  const lapElapsed            = timerElapsed % LAP_DURATION
+  const timerLapPhase         = timerElapsed > 0
+    ? (timerLapNumber % 2 === 0 ? "fill" : "erase") as "fill" | "erase"
+    : undefined
+  const timerLapPhaseProgress = timerElapsed > 0 ? lapElapsed / LAP_DURATION : undefined
 
   const visibleCats = !catsExpanded && categories.length > MAX_VISIBLE ? categories.slice(0, MAX_VISIBLE) : categories
   const visibleTimers = !timersExpanded && quickTimers.length > MAX_VISIBLE ? quickTimers.slice(0, MAX_VISIBLE) : quickTimers
@@ -318,14 +374,25 @@ export default function Timer() {
       <Background settings={settings} style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 32 }}>
         <span style={{ color: th.sub, fontSize: 13, letterSpacing: 4, textTransform: "uppercase" }}>{activeCategory.name}</span>
         {sessionTitle && <span style={{ color: th.text, fontSize: 18, fontWeight: 300 }}>{sessionTitle}</span>}
-        <CircularTimer progress={progress} seconds={seconds} color={activeCircleColor} accentColor={activeAccentColor}
-          size={320} onReset={() => { reset(); setSessionTitle("") }} onAddTime={addTime}
-          onInterrupt={interruptProp} interruptionActive={interruptionActive} interruptionElapsed={interruptionElapsed}
+        <CircularTimer
+          progress={mode === "stopwatch" ? sw.progress : progress}
+          seconds={mode === "stopwatch" ? sw.elapsed : seconds}
+          color={activeCircleColor} accentColor={activeAccentColor}
+          size={320}
+          onReset={mode === "stopwatch" ? undefined : () => { reset(); setSessionTitle("") }}
+          onAddTime={mode === "stopwatch" ? undefined : addTime}
+          onInterrupt={mode === "stopwatch" ? undefined : interruptProp}
+          interruptionActive={mode === "stopwatch" ? false : interruptionActive}
+          interruptionElapsed={mode === "stopwatch" ? 0 : interruptionElapsed}
+          lapPhase={mode === "stopwatch" ? sw.phase : timerLapPhase}
+          lapPhaseProgress={mode === "stopwatch" ? sw.phaseProgress : timerLapPhaseProgress}
           useGradient={settings.circleStyle === "gradient"} textColor={th.text} trackColor={th.track} />
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-          <button style={primaryBtn} onClick={toggle}>{isRunning ? t.pause : t.start}</button>
+          <button style={primaryBtn} onClick={mode === "stopwatch" ? sw.toggle : toggle}>
+            {(mode === "stopwatch" ? sw.isRunning : isRunning) ? t.pause : t.start}
+          </button>
           <button style={{ ...secondaryBtn, opacity: nextDisabled ? 0.35 : 1 }} onClick={nextDisabled ? () => navigate("/schedule") : handleNext}>{t.next}</button>
-          <button style={secondaryBtn} onClick={() => { handleTerminate(); setFocusMode(false) }}>{t.terminate}</button>
+          <button style={secondaryBtn} onClick={() => { handleTerminate(); if (mode === "timer") setFocusMode(false) }}>{t.terminate}</button>
         </div>
         <button onClick={() => setFocusMode(false)} style={{ ...btnBase, color: th.muted, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>{t.tapToExitFocus}</button>
       </Background>
@@ -368,21 +435,40 @@ export default function Timer() {
         )}
       </div>
 
-      <CircularTimer progress={progress} seconds={seconds} color={activeCircleColor} accentColor={activeAccentColor}
-        size={280} onReset={() => { reset(); setSessionTitle("") }} onAddTime={addTime}
-        onInterrupt={interruptProp} interruptionActive={interruptionActive} interruptionElapsed={interruptionElapsed}
-        useGradient={settings.circleStyle === "gradient"} textColor={th.text} trackColor={th.track} />
+      {mode === "stopwatch" ? (
+        <CircularTimer progress={sw.progress} seconds={sw.elapsed} color={activeCircleColor} accentColor={activeAccentColor}
+          size={280}
+          lapPhase={sw.phase} lapPhaseProgress={sw.phaseProgress}
+          useGradient={settings.circleStyle === "gradient"} textColor={th.text} trackColor={th.track} />
+      ) : (
+        <CircularTimer progress={progress} seconds={seconds} color={activeCircleColor} accentColor={activeAccentColor}
+          size={280} onReset={() => { reset(); setSessionTitle("") }} onAddTime={addTime}
+          onInterrupt={interruptProp} interruptionActive={interruptionActive} interruptionElapsed={interruptionElapsed}
+          lapPhase={timerLapPhase} lapPhaseProgress={timerLapPhaseProgress}
+          useGradient={settings.circleStyle === "gradient"} textColor={th.text} trackColor={th.track} />
+      )}
 
-      {/* Quick timers */}
+      {/* Quick timers + stopwatch toggle */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+        <button
+          onClick={() => switchMode(mode === "stopwatch" ? "timer" : "stopwatch")}
+          style={{
+            background: mode === "stopwatch" ? th.text : "none",
+            border: `1px solid ${mode === "stopwatch" ? th.text : th.border}`, borderRadius: 100,
+            padding: "8px 14px", color: mode === "stopwatch" ? th.inv : th.sub,
+            fontSize: 13, cursor: "pointer",
+          }}
+        >
+          ⏱
+        </button>
         {visibleTimers.map((d) => (
           <button
             key={d.id}
             onClick={() => handleQuickTimer(d.seconds, d.label)}
             style={{
-              background: chosenDuration === d.seconds ? th.text : "none",
+              background: mode === "timer" && chosenDuration === d.seconds ? th.text : "none",
               border: `1px solid ${th.border}`, borderRadius: 100,
-              padding: "8px 14px", color: chosenDuration === d.seconds ? th.inv : th.sub,
+              padding: "8px 14px", color: mode === "timer" && chosenDuration === d.seconds ? th.inv : th.sub,
               fontSize: 13, cursor: "pointer",
             }}
           >
@@ -402,10 +488,12 @@ export default function Timer() {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", maxWidth: 400 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "center", justifyContent: "center", width: "100%" }}>
           <button style={secondaryBtn} onClick={handleTerminate}>{t.terminate}</button>
-          <button style={primaryBtn} onClick={toggle}>{isRunning ? t.pause : t.start}</button>
+          <button style={primaryBtn} onClick={mode === "stopwatch" ? sw.toggle : toggle}>
+            {(mode === "stopwatch" ? sw.isRunning : isRunning) ? t.pause : t.start}
+          </button>
           <button style={{ ...secondaryBtn, opacity: nextDisabled ? 0.35 : 1 }} onClick={nextDisabled ? () => navigate("/schedule") : handleNext}>{t.next}</button>
         </div>
-        {nextBlock && (
+        {mode === "timer" && nextBlock && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 6, height: 6, borderRadius: 3, background: nextBlock.category_color }} />
             <span style={{ color: th.muted, fontSize: 12, letterSpacing: 0.5 }}>
@@ -431,7 +519,7 @@ export default function Timer() {
                 {t.cancel}
               </button>
               <button
-                onClick={() => { handleTerminate(); selectDuration(confirmQuick.durationSec); setConfirmQuick(null) }}
+                onClick={() => { handleTerminate(); if (mode === "stopwatch") setMode("timer"); selectDuration(confirmQuick.durationSec); setConfirmQuick(null) }}
                 style={{ background: th.text, border: "none", borderRadius: 100, padding: "10px 24px", color: th.inv, fontSize: 14, cursor: "pointer", fontWeight: 500 }}
               >
                 {t.terminate}
