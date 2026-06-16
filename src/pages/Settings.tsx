@@ -6,7 +6,8 @@ import Background from "../components/Background"
 
 const PALETTE = [
   "#0F0F0F","#1A1A2E","#0D0D0D","#F5F5F5","#FAFAFA",
-  "#6C63FF","#FF6584","#43B89C","#F9A825","#2196F3",
+  "#6C63FF","#C084FC","#818CF8","#FF6584","#F472B6",
+  "#43B89C","#2DD4BF","#38BDF8","#F9A825","#FF8C00","#2196F3",
 ]
 
 export default function Settings() {
@@ -28,12 +29,15 @@ export default function Settings() {
 
         {/* Circle style */}
         <div style={sectionTitle}>{t.circleStyle}</div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
           {(["solid","gradient"] as const).map((s) => (
             <button key={s} onClick={() => updateSettings({ circleStyle: s })} style={pill(th, settings.circleStyle === s)}>
               {s === "solid" ? t.solid : t.gradient}
             </button>
           ))}
+          <button onClick={() => updateSettings({ circleThick: !settings.circleThick })} style={pill(th, !!settings.circleThick)}>
+            {t.circleThick}
+          </button>
         </div>
 
         {/* Circle fixed color */}

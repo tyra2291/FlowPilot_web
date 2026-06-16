@@ -5,6 +5,7 @@ export type BackgroundType = "solid" | "gradient" | "mesh"
 
 export interface Settings {
   circleStyle: CircleStyle
+  circleThick: boolean
   backgroundColor: string
   backgroundType: BackgroundType
   backgroundGradient: string[]
@@ -17,6 +18,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   circleStyle: "solid",
+  circleThick: false,
   backgroundColor: "#0F0F0F",
   backgroundType: "mesh",
   backgroundGradient: ["#0F0F0F", "#1A1A2E"],

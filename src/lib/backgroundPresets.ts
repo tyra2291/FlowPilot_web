@@ -19,6 +19,7 @@ export type MeshKey =
   | "meshCrimson"
   | "meshBloom"
   | "meshPolar"
+  | "meshGalaxy"
 
 export const MESH_PRESETS: MeshPreset[] = [
   {
@@ -65,6 +66,15 @@ export const MESH_PRESETS: MeshPreset[] = [
     base: "#0A0303",
     layers: [
       { colors: ["rgba(210,40,40,0.45)", "transparent"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
+    ],
+  },
+  {
+    key: "meshGalaxy",
+    base: "#030412",
+    layers: [
+      { colors: ["rgba(20,80,255,0.65)",   "transparent"], start: { x: 0.5, y: 0   }, end: { x: 0.5, y: 1   } },
+      { colors: ["rgba(0,160,255,0.30)",   "transparent"], start: { x: 1,   y: 0   }, end: { x: 0,   y: 0.8 } },
+      { colors: ["rgba(120,40,240,0.38)",  "transparent"], start: { x: 0,   y: 1   }, end: { x: 1,   y: 0   } },
     ],
   },
   {

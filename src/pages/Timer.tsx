@@ -258,12 +258,20 @@ export default function Timer() {
       })
       setInterruptionActive(false)
       setInterruptionElapsed(0)
-      jumpTo(savedSecondsRef.current)
-      if (wasRunningRef.current) toggle()
+      if (mode === "stopwatch") {
+        if (wasRunningRef.current) sw.toggle()
+      } else {
+        jumpTo(savedSecondsRef.current)
+        if (wasRunningRef.current) toggle()
+      }
     } else {
-      savedSecondsRef.current = seconds
-      wasRunningRef.current = isRunning
-      if (isRunning) toggle()
+      wasRunningRef.current = mode === "stopwatch" ? sw.isRunning : isRunning
+      if (mode === "stopwatch") {
+        if (sw.isRunning) sw.toggle()
+      } else {
+        savedSecondsRef.current = seconds
+        if (isRunning) toggle()
+      }
       setInterruptionActive(true)
       setInterruptionElapsed(0)
     }
@@ -379,14 +387,14 @@ export default function Timer() {
           seconds={mode === "stopwatch" ? sw.elapsed : seconds}
           color={activeCircleColor} accentColor={activeAccentColor}
           size={320}
-          onReset={mode === "stopwatch" ? undefined : () => { reset(); setSessionTitle("") }}
+          onReset={mode === "stopwatch" ? () => { sw.reset(); setSessionTitle("") } : () => { reset(); setSessionTitle("") }}
           onAddTime={mode === "stopwatch" ? undefined : addTime}
-          onInterrupt={mode === "stopwatch" ? undefined : interruptProp}
-          interruptionActive={mode === "stopwatch" ? false : interruptionActive}
-          interruptionElapsed={mode === "stopwatch" ? 0 : interruptionElapsed}
+          onInterrupt={interruptProp}
+          interruptionActive={interruptionActive}
+          interruptionElapsed={interruptionElapsed}
           lapPhase={mode === "stopwatch" ? sw.phase : timerLapPhase}
           lapPhaseProgress={mode === "stopwatch" ? sw.phaseProgress : timerLapPhaseProgress}
-          useGradient={settings.circleStyle === "gradient"} textColor={th.text} trackColor={th.track} />
+          useGradient={settings.circleStyle === "gradient"} thick={settings.circleThick} textColor={th.text} trackColor={th.track} />
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
           <button style={primaryBtn} onClick={mode === "stopwatch" ? sw.toggle : toggle}>
             {(mode === "stopwatch" ? sw.isRunning : isRunning) ? t.pause : t.start}
@@ -438,14 +446,16 @@ export default function Timer() {
       {mode === "stopwatch" ? (
         <CircularTimer progress={sw.progress} seconds={sw.elapsed} color={activeCircleColor} accentColor={activeAccentColor}
           size={280}
+          onReset={() => { sw.reset(); setSessionTitle("") }}
+          onInterrupt={interruptProp} interruptionActive={interruptionActive} interruptionElapsed={interruptionElapsed}
           lapPhase={sw.phase} lapPhaseProgress={sw.phaseProgress}
-          useGradient={settings.circleStyle === "gradient"} textColor={th.text} trackColor={th.track} />
+          useGradient={settings.circleStyle === "gradient"} thick={settings.circleThick} textColor={th.text} trackColor={th.track} />
       ) : (
         <CircularTimer progress={progress} seconds={seconds} color={activeCircleColor} accentColor={activeAccentColor}
           size={280} onReset={() => { reset(); setSessionTitle("") }} onAddTime={addTime}
           onInterrupt={interruptProp} interruptionActive={interruptionActive} interruptionElapsed={interruptionElapsed}
           lapPhase={timerLapPhase} lapPhaseProgress={timerLapPhaseProgress}
-          useGradient={settings.circleStyle === "gradient"} textColor={th.text} trackColor={th.track} />
+          useGradient={settings.circleStyle === "gradient"} thick={settings.circleThick} textColor={th.text} trackColor={th.track} />
       )}
 
       {/* Quick timers + stopwatch toggle */}

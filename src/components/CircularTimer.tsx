@@ -16,6 +16,7 @@ interface Props {
   trackColor?: string
   lapPhase?: "fill" | "erase"
   lapPhaseProgress?: number
+  thick?: boolean
 }
 
 const fmt = (s: number) =>
@@ -37,9 +38,10 @@ export default function CircularTimer({
   trackColor = "#1A1A1A",
   lapPhase,
   lapPhaseProgress,
+  thick = false,
 }: Props) {
   const [addExpanded, setAddExpanded] = useState(false)
-  const strokeWidth = 3
+  const strokeWidth = thick ? 12 : 3
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const offset = circumference * progress
@@ -51,7 +53,7 @@ export default function CircularTimer({
     >
       <svg width={size} height={size} style={{ position: "absolute", top: 0, left: 0 }}>
         <defs>
-          <linearGradient id="circleGradient" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id="circleGradient" x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
             <stop offset="0" stopColor="#FFFFFF" stopOpacity="1" />
             <stop offset="1" stopColor={accentColor || color} stopOpacity="1" />
           </linearGradient>

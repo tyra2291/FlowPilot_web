@@ -54,6 +54,7 @@ interface T {
   // Settings
   settings: string
   circleStyle: string
+  circleThick: string
   stroke: string
   solid: string
   gradient: string
@@ -88,6 +89,7 @@ interface T {
   meshCrimson: string
   meshBloom: string
   meshPolar: string
+  meshGalaxy: string
   // Gradient names — keys match the GradientKey type in settings.tsx
   midnight: string
   deepBlue: string
@@ -297,6 +299,7 @@ const en: T = {
   deleteTimerConfirm: (l) => `Delete "${l}"?`,
   settings: "Settings",
   circleStyle: "Circle style",
+  circleThick: "Thick stroke",
   stroke: "Stroke",
   solid: "Solid",
   gradient: "Gradient",
@@ -329,6 +332,7 @@ const en: T = {
   meshCrimson: "Crimson",
   meshBloom: "Bloom",
   meshPolar: "Polar",
+  meshGalaxy: "Galaxy",
   midnight: "Midnight",
   deepBlue: "Deep blue",
   purpleNight: "Purple night",
@@ -522,6 +526,7 @@ const fr: T = {
   deleteTimerConfirm: (l) => `Supprimer « ${l} » ?`,
   settings: "Paramètres",
   circleStyle: "Style du cercle",
+  circleThick: "Trait épais",
   stroke: "Trait",
   solid: "Plein",
   gradient: "Dégradé",
@@ -554,6 +559,7 @@ const fr: T = {
   meshCrimson: "Cramoisi",
   meshBloom: "Floraison",
   meshPolar: "Polaire",
+  meshGalaxy: "Galaxie",
   midnight: "Minuit",
   deepBlue: "Bleu profond",
   purpleNight: "Nuit violette",
@@ -747,6 +753,7 @@ const es: T = {
   deleteTimerConfirm: (l) => `¿Eliminar "${l}"?`,
   settings: "Ajustes",
   circleStyle: "Estilo del círculo",
+  circleThick: "Trazo grueso",
   stroke: "Trazo",
   solid: "Sólido",
   gradient: "Degradado",
@@ -779,6 +786,7 @@ const es: T = {
   meshCrimson: "Carmesí",
   meshBloom: "Flor",
   meshPolar: "Polar",
+  meshGalaxy: "Galaxia",
   midnight: "Medianoche",
   deepBlue: "Azul profundo",
   purpleNight: "Noche violeta",
@@ -972,6 +980,7 @@ const de: T = {
   deleteTimerConfirm: (l) => `"${l}" löschen?`,
   settings: "Einstellungen",
   circleStyle: "Kreisstil",
+  circleThick: "Dicker Strich",
   stroke: "Linie",
   solid: "Einfarbig",
   gradient: "Verlauf",
@@ -1004,6 +1013,7 @@ const de: T = {
   meshCrimson: "Karmesin",
   meshBloom: "Blüte",
   meshPolar: "Polar",
+  meshGalaxy: "Galaxie",
   midnight: "Mitternacht",
   deepBlue: "Tiefblau",
   purpleNight: "Violette Nacht",
@@ -1197,6 +1207,7 @@ const zh: T = {
   deleteTimerConfirm: (l) => `删除"${l}"？`,
   settings: "设置",
   circleStyle: "圆圈样式",
+  circleThick: "粗笔划",
   stroke: "线条",
   solid: "实线",
   gradient: "渐变",
@@ -1229,6 +1240,7 @@ const zh: T = {
   meshCrimson: "深红",
   meshBloom: "绽放",
   meshPolar: "极地",
+  meshGalaxy: "星系",
   midnight: "午夜",
   deepBlue: "深蓝",
   purpleNight: "紫色夜晚",
