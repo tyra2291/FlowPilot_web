@@ -210,23 +210,27 @@ export default function Timer() {
     const blockChanged = currentBlock.id !== prevBlockIdRef.current
     prevBlockIdRef.current = currentBlock.id
 
-    if (!blockChanged && (isRunningRef.current || swIsRunningRef.current)) return
+    if (!blockChanged && isRunningRef.current) return
 
     const swElapsed = swElapsedRef.current
-    const swHasContent = modeRef.current === "stopwatch" && (swIsRunningRef.current || swElapsed >= 30)
-    if (blockChanged && (isRunningRef.current || swHasContent) && activeCategory) {
-      if (isRunningRef.current) {
-        const fullDur = fullDurationRef.current ?? chosenDuration
-        fullDurationRef.current = null
-        addSession({
-          title: sessionTitle || null,
-          category_name: activeCategory.name,
-          category_color: activeCategory.color,
-          duration_seconds: fullDur,
-          elapsed_seconds: fullDur - seconds,
-          completed: false,
-        })
-      } else if (swElapsed > 0) {
+
+    // Save interrupted timer session.
+    if (blockChanged && isRunningRef.current && activeCategory) {
+      const fullDur = fullDurationRef.current ?? chosenDuration
+      fullDurationRef.current = null
+      addSession({
+        title: sessionTitle || null,
+        category_name: activeCategory.name,
+        category_color: activeCategory.color,
+        duration_seconds: fullDur,
+        elapsed_seconds: fullDur - seconds,
+        completed: false,
+      })
+    }
+
+    // Save stopwatch session and switch to timer mode.
+    if (blockChanged && modeRef.current === "stopwatch") {
+      if (activeCategory && swElapsed > 0) {
         addSession({
           title: sessionTitle || null,
           category_name: activeCategory.name,
