@@ -194,8 +194,8 @@ export default function Timer() {
         setNextBlock(runningIdx >= 0 ? sorted[runningIdx + 1] ?? null : next)
         return
       }
-      setCurrentBlock(current)
-      setNextBlock(next)
+      setCurrentBlock(prev => prev?.id === current?.id ? prev : current)
+      setNextBlock(prev => prev?.id === next?.id ? prev : next)
     }
     detect()
     const interval = setInterval(detect, 60_000)
