@@ -79,10 +79,10 @@ export const MESH_PRESETS: MeshPreset[] = [
   },
   {
     key: "meshBloom",
-    base: "#1A0810",
+    base: "#1A0815",
     layers: [
-      { colors: ["rgba(255,80,140,0.55)",  "transparent"], start: { x: 0.5, y: 0 }, end: { x: 0.5, y: 1 } },
-      { colors: ["rgba(200,40,100,0.30)",  "transparent"], start: { x: 1,   y: 0 }, end: { x: 0,   y: 1 } },
+      { colors: ["rgba(255,120,200,0.72)",  "transparent"], start: { x: 0.5, y: 0 }, end: { x: 0.5, y: 1 } },
+      { colors: ["rgba(255,40,160,0.45)",   "transparent"], start: { x: 1,   y: 0 }, end: { x: 0,   y: 1 } },
     ],
   },
   {

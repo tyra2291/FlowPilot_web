@@ -210,10 +210,11 @@ export default function Timer() {
     const blockChanged = currentBlock.id !== prevBlockIdRef.current
     prevBlockIdRef.current = currentBlock.id
 
-    if (!blockChanged && isRunningRef.current) return
+    if (!blockChanged && (isRunningRef.current || swIsRunningRef.current)) return
 
-    const swHasContent = modeRef.current === "stopwatch" && swElapsedRef.current >= 30
-    if (blockChanged && (isRunningRef.current || swIsRunningRef.current || swHasContent) && activeCategory) {
+    const swElapsed = swElapsedRef.current
+    const swHasContent = modeRef.current === "stopwatch" && (swIsRunningRef.current || swElapsed >= 30)
+    if (blockChanged && (isRunningRef.current || swHasContent) && activeCategory) {
       if (isRunningRef.current) {
         const fullDur = fullDurationRef.current ?? chosenDuration
         fullDurationRef.current = null
@@ -225,13 +226,13 @@ export default function Timer() {
           elapsed_seconds: fullDur - seconds,
           completed: false,
         })
-      } else if (swHasContent) {
+      } else if (swElapsed > 0) {
         addSession({
           title: sessionTitle || null,
           category_name: activeCategory.name,
           category_color: activeCategory.color,
-          duration_seconds: swElapsedRef.current,
-          elapsed_seconds: swElapsedRef.current,
+          duration_seconds: swElapsed,
+          elapsed_seconds: swElapsed,
           completed: false,
         })
       }
