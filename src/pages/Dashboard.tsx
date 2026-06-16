@@ -6,7 +6,7 @@ import { useTheme } from "../hooks/useTheme"
 import { useTranslation } from "../lib/i18n"
 import Background from "../components/Background"
 
-type Period = "7d" | "30d" | "all" | "custom"
+type Period = "1d" | "7d" | "30d" | "all" | "custom"
 
 function computeStats(sessions: Session[], from: Date, to: Date) {
   const filtered = sessions.filter((s) => {
@@ -102,7 +102,8 @@ export default function Dashboard() {
     }
     const to = new Date(); to.setHours(23, 59, 59, 999)
     const from = new Date()
-    if (period === "7d") from.setDate(from.getDate() - 6)
+    if (period === "1d") { /* today only — from = today midnight */ }
+    else if (period === "7d") from.setDate(from.getDate() - 6)
     else if (period === "30d") from.setDate(from.getDate() - 29)
     else from.setFullYear(2000)
     from.setHours(0, 0, 0, 0)
@@ -136,9 +137,9 @@ export default function Dashboard() {
         {/* Period pills + optional custom date inputs */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: period === "custom" ? 12 : 0 }}>
-            {(["7d","30d","all","custom"] as Period[]).map((p) => (
+            {(["1d","7d","30d","all","custom"] as Period[]).map((p) => (
               <button key={p} onClick={() => setPeriod(p)} style={pill(th, period === p)}>
-                {p === "7d" ? t.thisWeek : p === "30d" ? t.thisMonth : p === "all" ? t.allTimeShort : t.customPeriod}
+                {p === "1d" ? t.todayLabel : p === "7d" ? t.thisWeek : p === "30d" ? t.thisMonth : p === "all" ? t.allTimeShort : t.customPeriod}
               </button>
             ))}
           </div>

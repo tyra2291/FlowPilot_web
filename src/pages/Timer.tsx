@@ -56,9 +56,15 @@ export default function Timer() {
   const restoreCategoryRef = useRef<string | null>(null)
   const restoredRef = useRef(false)
   const prevBlockIdRef = useRef<string | undefined>(undefined)
-  isRunningRef.current = isRunning
+  const swIsRunningRef = useRef(sw.isRunning)
+  const swElapsedRef   = useRef(sw.elapsed)
+  const modeRef        = useRef(mode)
+  isRunningRef.current    = isRunning
+  swIsRunningRef.current  = sw.isRunning
+  swElapsedRef.current    = sw.elapsed
+  modeRef.current         = mode
   currentBlockRef.current = currentBlock
-  nextBlockRef.current = nextBlock
+  nextBlockRef.current    = nextBlock
 
   // ── Realtime sync ────────────────────────────────────────────────────────
   const handleRemoteUpdate = useCallback((state: RemoteTimerState) => {
@@ -205,17 +211,31 @@ export default function Timer() {
 
     if (!blockChanged && isRunningRef.current) return
 
-    if (blockChanged && isRunningRef.current && activeCategory) {
-      const fullDur = fullDurationRef.current ?? chosenDuration
-      fullDurationRef.current = null
-      addSession({
-        title: sessionTitle || null,
-        category_name: activeCategory.name,
-        category_color: activeCategory.color,
-        duration_seconds: fullDur,
-        elapsed_seconds: fullDur - seconds,
-        completed: false,
-      })
+    const swHasContent = modeRef.current === "stopwatch" && swElapsedRef.current >= 30
+    if (blockChanged && (isRunningRef.current || swIsRunningRef.current || swHasContent) && activeCategory) {
+      if (isRunningRef.current) {
+        const fullDur = fullDurationRef.current ?? chosenDuration
+        fullDurationRef.current = null
+        addSession({
+          title: sessionTitle || null,
+          category_name: activeCategory.name,
+          category_color: activeCategory.color,
+          duration_seconds: fullDur,
+          elapsed_seconds: fullDur - seconds,
+          completed: false,
+        })
+      } else if (swHasContent) {
+        addSession({
+          title: sessionTitle || null,
+          category_name: activeCategory.name,
+          category_color: activeCategory.color,
+          duration_seconds: swElapsedRef.current,
+          elapsed_seconds: swElapsedRef.current,
+          completed: false,
+        })
+      }
+      sw.reset()
+      setMode("timer")
       setSessionTitle("")
     }
 
@@ -392,8 +412,8 @@ export default function Timer() {
           onInterrupt={interruptProp}
           interruptionActive={interruptionActive}
           interruptionElapsed={interruptionElapsed}
-          lapPhase={mode === "stopwatch" ? sw.phase : timerLapPhase}
-          lapPhaseProgress={mode === "stopwatch" ? sw.phaseProgress : timerLapPhaseProgress}
+          lapPhase={mode === "stopwatch" ? sw.phase : undefined}
+          lapPhaseProgress={mode === "stopwatch" ? sw.phaseProgress : undefined}
           useGradient={settings.circleStyle === "gradient"} thick={settings.circleThick} textColor={th.text} trackColor={th.track} />
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
           <button style={primaryBtn} onClick={mode === "stopwatch" ? sw.toggle : toggle}>
@@ -454,7 +474,6 @@ export default function Timer() {
         <CircularTimer progress={progress} seconds={seconds} color={activeCircleColor} accentColor={activeAccentColor}
           size={280} onReset={() => { reset(); setSessionTitle("") }} onAddTime={addTime}
           onInterrupt={interruptProp} interruptionActive={interruptionActive} interruptionElapsed={interruptionElapsed}
-          lapPhase={timerLapPhase} lapPhaseProgress={timerLapPhaseProgress}
           useGradient={settings.circleStyle === "gradient"} thick={settings.circleThick} textColor={th.text} trackColor={th.track} />
       )}
 
@@ -503,7 +522,7 @@ export default function Timer() {
           </button>
           <button style={{ ...secondaryBtn, opacity: nextDisabled ? 0.35 : 1 }} onClick={nextDisabled ? () => navigate("/schedule") : handleNext}>{t.next}</button>
         </div>
-        {mode === "timer" && nextBlock && (
+        {nextBlock && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 6, height: 6, borderRadius: 3, background: nextBlock.category_color }} />
             <span style={{ color: th.muted, fontSize: 12, letterSpacing: 0.5 }}>
