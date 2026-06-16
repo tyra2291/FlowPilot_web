@@ -16,6 +16,7 @@ const fmt = (s: number) => {
     return `${h}:${String(m).padStart(2, "0")}`
   }
   const m = Math.floor(s / 60); const sec = s % 60
+  if (m >= 10) return `${m}:00`
   return `${m}:${String(sec).padStart(2, "0")}`
 }
 
