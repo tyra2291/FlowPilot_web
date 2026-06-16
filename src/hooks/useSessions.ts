@@ -20,8 +20,8 @@ export interface Session {
   completed_at: string           // ISO 8601 UTC timestamp, set by Supabase default
 }
 
-// Free plan: sessions older than this many months are deleted by pruneOldSessions().
-export const FREE_HISTORY_MONTHS = 1
+// Free plan: sessions older than this many days are deleted by pruneOldSessions().
+export const FREE_HISTORY_DAYS = 7
 
 export function useSessions() {
   const [sessions, setSessions] = useState<Session[]>([])
@@ -79,9 +79,9 @@ export function useSessions() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Compute the cutoff date: midnight FREE_HISTORY_MONTHS ago (local time).
+      // Compute the cutoff date: midnight FREE_HISTORY_DAYS ago (local time).
       const cutoff = new Date()
-      cutoff.setMonth(cutoff.getMonth() - FREE_HISTORY_MONTHS)
+      cutoff.setDate(cutoff.getDate() - FREE_HISTORY_DAYS)
       cutoff.setHours(0, 0, 0, 0)
 
       // Delete rows older than the cutoff from Supabase.
