@@ -77,7 +77,9 @@ export default function CircularTimer({
           transform={`rotate(${
             lapPhase === "erase" && lapPhaseProgress !== undefined
               ? -90 + lapPhaseProgress * 360
-              : -90
+              : lapPhase === undefined
+                ? -90 + progress * 360
+                : -90
           } ${size / 2} ${size / 2})`}
           style={{ transition: lapPhase !== undefined ? "none" : "stroke-dashoffset 0.5s linear" }}
         />
