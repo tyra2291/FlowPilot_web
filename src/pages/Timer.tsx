@@ -47,6 +47,7 @@ export default function Timer() {
   const [interruptionActive, setInterruptionActive] = useState(false)
   const [interruptionElapsed, setInterruptionElapsed] = useState(0)
   const [confirmQuick, setConfirmQuick] = useState<{ durationSec: number; label: string } | null>(null)
+  const [confirmSwitchSW, setConfirmSwitchSW] = useState(false)
   const savedSecondsRef = useRef(0)
   const wasRunningRef = useRef(false)
   const isRunningRef = useRef(isRunning)
@@ -351,6 +352,10 @@ export default function Timer() {
 
   const switchMode = (next: "timer" | "stopwatch") => {
     if (next === mode) return
+    if (next === "stopwatch" && (isRunning || seconds < chosenDuration)) {
+      setConfirmSwitchSW(true)
+      return
+    }
     if (isRunning) { reset(); setSessionTitle("") }
     if (sw.isRunning) { sw.reset(); setSessionTitle("") }
     setMode(next)
@@ -531,6 +536,32 @@ export default function Timer() {
           </div>
         )}
       </div>
+
+      {/* Switch-to-stopwatch confirmation modal */}
+      {confirmSwitchSW && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
+          <div style={{ background: th.card, border: `1px solid ${th.border}`, borderRadius: 16, padding: 28, maxWidth: 320, width: "100%", textAlign: "center" }}>
+            <p style={{ color: th.text, fontSize: 16, marginBottom: 8 }}>{t.stopCurrentTimer}</p>
+            <p style={{ color: th.sub, fontSize: 14, marginBottom: 24 }}>
+              {t.stopCurrentTimerMsg.replace("{label}", sessionTitle || activeCategory?.name || "")}
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <button
+                onClick={() => setConfirmSwitchSW(false)}
+                style={{ background: "none", border: `1px solid ${th.border}`, borderRadius: 100, padding: "10px 24px", color: th.sub, fontSize: 14, cursor: "pointer" }}
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={() => { reset(); setSessionTitle(""); setMode("stopwatch"); setConfirmSwitchSW(false) }}
+                style={{ background: "#FF6584", border: "none", borderRadius: 100, padding: "10px 24px", color: "#fff", fontSize: 14, cursor: "pointer", fontWeight: 500 }}
+              >
+                {t.terminate}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick timer confirmation modal */}
       {confirmQuick && (
