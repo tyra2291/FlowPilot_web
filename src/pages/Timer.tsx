@@ -36,7 +36,16 @@ export default function Timer() {
   const { isPremium, loading: subLoading } = useSubscription()
   const { blocks: scheduleBlocks } = useSchedule()
 
-  const [mode, setMode] = useState<"timer" | "stopwatch">("timer")
+  const [mode, setMode] = useState<"timer" | "stopwatch">(() => {
+    try {
+      const raw = sessionStorage.getItem("fp-sw")
+      if (raw) {
+        const sw = JSON.parse(raw) as { isRunning?: boolean; elapsed?: number }
+        if (sw.isRunning || (sw.elapsed ?? 0) > 0) return "stopwatch"
+      }
+    } catch {}
+    return "timer"
+  })
   const [activeCategory, setActiveCategory] = useState<Category | null>(null)
   const [sessionTitle, setSessionTitle] = useState("")
   const [focusMode, setFocusMode] = useState(false)
