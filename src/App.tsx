@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { supabase } from "./lib/supabase"
 import { useTheme } from "./hooks/useTheme"
+import { FocusModeProvider, useFocusMode } from "./contexts/FocusMode"
 import Nav from "./components/Nav"
 import Login from "./pages/Login"
 import Timer from "./pages/Timer"
@@ -61,11 +62,12 @@ function MobileRedirect() {
 function AuthedApp() {
   const { th } = useTheme()
   const location = useLocation()
+  const { focusMode } = useFocusMode()
   const isLogin = location.pathname === "/login"
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: th.modalBg }}>
-      {!isLogin && <Nav />}
+      {!isLogin && !focusMode && <Nav />}
       <main style={{ flex: 1, overflowY: "auto" }}>
         <Routes>
           <Route path="/"             element={<Timer />} />
@@ -112,8 +114,10 @@ export default function App() {
   if (authed === null) return null
 
   return (
-    <BrowserRouter basename={import.meta.env.VITE_BASE_PATH ?? "/"}>
-      {authed ? <AuthedApp /> : <GuestApp />}
-    </BrowserRouter>
+    <FocusModeProvider>
+      <BrowserRouter basename={import.meta.env.VITE_BASE_PATH ?? "/"}>
+        {authed ? <AuthedApp /> : <GuestApp />}
+      </BrowserRouter>
+    </FocusModeProvider>
   )
 }

@@ -9,6 +9,7 @@ import { useSchedule, ScheduleBlock } from "../hooks/useSchedule"
 import { useSubscription } from "../hooks/useSubscription"
 import { useTheme } from "../hooks/useTheme"
 import { useTranslation } from "../lib/i18n"
+import { useFocusMode } from "../contexts/FocusMode"
 import Background from "../components/Background"
 import CircularTimer from "../components/CircularTimer"
 import { useTimerSync, RemoteTimerState } from "../hooks/useTimerSync"
@@ -48,7 +49,7 @@ export default function Timer() {
   })
   const [activeCategory, setActiveCategory] = useState<Category | null>(null)
   const [sessionTitle, setSessionTitle] = useState("")
-  const [focusMode, setFocusMode] = useState(false)
+  const { focusMode, setFocusMode } = useFocusMode()
   const [catsExpanded, setCatsExpanded] = useState(false)
   const [timersExpanded, setTimersExpanded] = useState(false)
   const [currentBlock, setCurrentBlock] = useState<ScheduleBlock | null>(null)
