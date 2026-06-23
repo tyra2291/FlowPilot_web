@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { supabase } from "./lib/supabase"
 import { useTheme } from "./hooks/useTheme"
-import { useSubscription } from "./hooks/useSubscription"
 import Nav from "./components/Nav"
 import Login from "./pages/Login"
 import Timer from "./pages/Timer"
@@ -61,20 +60,8 @@ function MobileRedirect() {
 
 function AuthedApp() {
   const { th } = useTheme()
-  const { isPremium, loading: premiumLoading } = useSubscription()
   const location = useLocation()
   const isLogin = location.pathname === "/login"
-
-  if (premiumLoading) return null
-
-  if (!isPremium) {
-    return (
-      <Routes>
-        <Route path="/upgrade" element={<Upgrade />} />
-        <Route path="*"        element={<Navigate to="/upgrade" replace />} />
-      </Routes>
-    )
-  }
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: th.modalBg }}>
