@@ -6,7 +6,6 @@ import { supabase } from "../lib/supabase"
 import Background from "../components/Background"
 
 const FEATURES = (t: any) => [
-  "Web App access",
   t.featureSchedule, t.featureHistory, t.featureCategories,
   t.featureTimers, t.featurePeriods,
 ]
