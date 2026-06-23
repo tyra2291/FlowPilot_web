@@ -39,7 +39,7 @@ function MobileRedirect() {
           The web app is designed for desktop.<br />Use the native app on your phone for the best experience.
         </p>
         <a
-          href="https://tyra2291.github.io/FlowPilot_landing_page/"
+          href="https://play.google.com/store/apps/details?id=app.flowpilot.focus"
           style={{
             display: "inline-block",
             background: "#AA32FF",
@@ -52,7 +52,7 @@ function MobileRedirect() {
             letterSpacing: 1,
           }}
         >
-          Get the app
+          Available on Android
         </a>
       </div>
     </div>
