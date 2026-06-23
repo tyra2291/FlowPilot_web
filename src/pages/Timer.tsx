@@ -278,6 +278,23 @@ export default function Timer() {
     }
   }, [currentBlock?.id, categories.length])
 
+  // Fullscreen sync with focus mode
+  useEffect(() => {
+    if (focusMode) {
+      document.documentElement.requestFullscreen?.().catch(() => {})
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => {})
+    }
+  }, [focusMode])
+
+  useEffect(() => {
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setFocusMode(false)
+    }
+    document.addEventListener("fullscreenchange", onFsChange)
+    return () => document.removeEventListener("fullscreenchange", onFsChange)
+  }, [])
+
   // Interruption counter
   useEffect(() => {
     if (!interruptionActive) return
