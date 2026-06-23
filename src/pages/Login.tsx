@@ -7,7 +7,8 @@ import Background from "../components/Background"
 export default function Login() {
   const { t } = useTranslation()
   const { settings, th } = useTheme()
-  const [error, setError] = useState("")
+  const [error, setError]       = useState("")
+  const [loadingAnon, setLoadingAnon] = useState(false)
 
   const handleGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -17,18 +18,33 @@ export default function Login() {
     if (error) setError(error.message)
   }
 
+  const handleAnon = async () => {
+    setLoadingAnon(true)
+    const { error } = await supabase.auth.signInAnonymously()
+    if (error) setError(error.message)
+    setLoadingAnon(false)
+  }
+
   return (
     <Background settings={settings} style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 380, width: "100%", padding: "32px 24px" }}>
+      <div style={{ maxWidth: 380, width: "100%", padding: "32px 24px", textAlign: "center" }}>
         <h1 style={{ color: th.text, fontSize: 22, fontWeight: 500, letterSpacing: 4, textTransform: "uppercase", marginBottom: 32 }}>FlowPilot</h1>
 
         <button onClick={handleGoogle} style={{ ...btnOutline(th), width: "100%" }}>
           {t.continueWithGoogle}
         </button>
 
+        <button
+          onClick={handleAnon}
+          disabled={loadingAnon}
+          style={{ background: "none", border: "none", cursor: "pointer", color: th.muted, fontSize: 15, marginTop: 20, textDecoration: "underline", padding: 0 }}
+        >
+          {loadingAnon ? t.loading : t.continueWithoutAccount}
+        </button>
+
         {error && <p style={{ color: "#FF6584", fontSize: 13, marginTop: 12 }}>{error}</p>}
 
-        <div style={{ marginTop: 32, textAlign: "center" }}>
+        <div style={{ marginTop: 32 }}>
           <a
             href="https://tyra2291.github.io/FlowPilot_landing_page/privacy.html"
             target="_blank"
