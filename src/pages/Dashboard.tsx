@@ -112,21 +112,7 @@ export default function Dashboard() {
 
   const stats = useMemo(() => computeStats(sessions, from, to), [sessions, from, to])
 
-  if (!isPremium) {
-    return (
-      <Background settings={settings} style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", padding: 32 }}>
-          <div style={{ color: th.text, fontSize: 22, marginBottom: 12 }}>📊</div>
-          <div style={{ color: th.text, fontSize: 18, marginBottom: 8 }}>{t.premiumFeature}</div>
-          <div style={{ color: th.sub, fontSize: 14, marginBottom: 24 }}>{t.dashboard}</div>
-          <button onClick={() => navigate("/upgrade")} style={{ background: th.text, border: "none", borderRadius: 100, padding: "14px 32px", color: th.inv, fontSize: 15, cursor: "pointer", letterSpacing: 1 }}>
-            {t.upgradeNow}
-          </button>
-        </div>
-      </Background>
-    )
-  }
-
+  const freePeriods: Period[] = ["1d", "7d"]
   const maxCat = Math.max(...Object.values(stats.catTotals).map((c) => c.seconds), 1)
 
   return (
@@ -137,11 +123,16 @@ export default function Dashboard() {
         {/* Period pills + optional custom date inputs */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: period === "custom" ? 12 : 0 }}>
-            {(["1d","7d","30d","all","custom"] as Period[]).map((p) => (
-              <button key={p} onClick={() => setPeriod(p)} style={pill(th, period === p)}>
-                {p === "1d" ? t.todayLabel : p === "7d" ? t.thisWeek : p === "30d" ? t.thisMonth : p === "all" ? t.allTimeShort : t.customPeriod}
-              </button>
-            ))}
+            {(["1d","7d","30d","all","custom"] as Period[]).map((p) => {
+              const locked = !isPremium && !freePeriods.includes(p)
+              return (
+                <button key={p} onClick={() => !locked && setPeriod(p)}
+                  style={pill(th, period === p, locked)}>
+                  {p === "1d" ? t.todayLabel : p === "7d" ? t.thisWeek : p === "30d" ? t.thisMonth : p === "all" ? t.allTimeShort : t.customPeriod}
+                  {locked ? " 🔒" : ""}
+                </button>
+              )
+            })}
           </div>
           {period === "custom" && (
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -154,6 +145,10 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {!isPremium && (
+          <p style={{ color: th.muted, fontSize: 12, marginBottom: 16 }}>{t.historyLimitNote}</p>
+        )}
 
         {stats.count === 0 ? (
           <p style={{ color: th.sub, textAlign: "center", marginTop: 60 }}>{t.noData}</p>
@@ -196,9 +191,10 @@ export default function Dashboard() {
   )
 }
 
-const pill = (th: { text: string; border: string; inv: string }, active: boolean): React.CSSProperties => ({
+const pill = (th: { text: string; border: string; inv: string }, active: boolean, locked = false): React.CSSProperties => ({
   background: active ? th.text : "none", border: `1px solid ${th.border}`, borderRadius: 100,
-  padding: "8px 20px", color: active ? th.inv : th.text, fontSize: 13, cursor: "pointer",
+  padding: "8px 20px", color: active ? th.inv : locked ? th.border : th.text,
+  fontSize: 13, cursor: locked ? "default" : "pointer", opacity: locked ? 0.5 : 1,
 })
 
 const dateInput = (th: any): React.CSSProperties => ({
