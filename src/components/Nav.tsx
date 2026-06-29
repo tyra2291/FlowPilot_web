@@ -11,6 +11,7 @@ const ITEMS = [
   { path: "/categories",  label: (t: any) => t.categories,  icon: "🏷" },
   { path: "/quick-timers",label: (t: any) => t.quickTimers, icon: "⚡" },
   { path: "/settings",    label: (t: any) => t.settings,    icon: "⚙" },
+  { path: "/account",     label: (t: any) => t.account,     icon: "👤" },
   { path: "/help",        label: (t: any) => t.help,        icon: "?" },
 ]
 
