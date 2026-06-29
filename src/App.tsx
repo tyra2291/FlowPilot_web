@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom"
 import { supabase } from "./lib/supabase"
 import { useTheme } from "./hooks/useTheme"
@@ -68,20 +69,21 @@ function AuthedApp() {
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: th.modalBg }}>
       {!isLogin && !focusMode && <Nav />}
-      {!isLogin && !focusMode && (
+      {!isLogin && !focusMode && createPortal(
         <Link
           to="/account"
           style={{
-            position: "fixed", top: 16, right: 20, zIndex: 200,
+            position: "fixed", top: 16, right: 20, zIndex: 9999,
             color: th.text, textDecoration: "none", lineHeight: 1,
-            opacity: 0.7,
+            opacity: 0.75, display: "block",
           }}
           title="Account"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 12c2.66 0 4.8-2.14 4.8-4.8S14.66 2.4 12 2.4 7.2 4.54 7.2 7.2 9.34 12 12 12zm0 2.4c-3.2 0-9.6 1.61-9.6 4.8v2.4h19.2v-2.4c0-3.19-6.4-4.8-9.6-4.8z"/>
           </svg>
-        </Link>
+        </Link>,
+        document.body
       )}
       <main style={{ flex: 1, overflowY: "auto" }}>
         <Routes>
